@@ -22,3 +22,9 @@ O serviço de e-mail embutido do Supabase (sem SMTP customizado) tem cota baixa.
 
 ### Checagem de vaga em "Participar" tem corrida (TOCTOU)
 `podeParticipar()` conta participações existentes e compara com `vagas` antes do insert, mas não há lock nem constraint no banco garantindo isso — dois alunos clicando "Participar" quase ao mesmo tempo na última vaga podem ambos passar na checagem antes de qualquer um inserir. O `unique(missao_id, aluno_id)` evita duplicidade do mesmo aluno, mas não excesso de vagas por alunos diferentes. Mesma categoria de limitação já registrada para dependência circular — aceitável pro MVP (baixíssima chance de colisão real numa sala de aula), resolver com um constraint/trigger no banco se virar problema de verdade.
+
+### Worker do Turbopack pode travar em sessões de dev muito longas
+`npm run dev` rodando continuamente por muitas horas (comum durante uma sessão longa de testes) pode acumular erro tipo "Jest worker encountered N child process exceptions" até crashar. Não é bug de código — é o pool de workers do Turbopack se esgotando. Solução: parar o processo `next dev` e iniciar de novo. Se isso ficar recorrente em uso normal (não só em sessão de desenvolvimento), vale investigar se é uma versão específica do Next.js 16 com esse problema conhecido, mas por ora é só reiniciar.
+
+### Painel de admin ainda não existe — professor é criado manualmente
+Hoje há um único professor, criado direto no banco. A criação de novo projeto está temporariamente travada por feature flag (ver DECISIONS.md) enquanto isso. Vale construir um painel de admin (criar/gerenciar contas de professor, religar a criação de projeto por permissão em vez de flag global) quando existir mais de um professor sendo criado com alguma frequência — não antes.

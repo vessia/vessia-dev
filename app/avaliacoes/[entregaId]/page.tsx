@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfessor } from "@/lib/auth/dal";
 import { Banner, Card } from "@/app/_components/ui";
 import { SubmitButton } from "@/app/_components/submit-button";
+import { buscarEntregaComContexto, usuarioPodeAcessarEntrega } from "@/lib/entregas/dal";
+import { gerarUrlAssinadaArquivo } from "@/lib/entregas/url-assinada";
+import { ehImagem } from "@/lib/entregas/tipo-arquivo";
 import { avaliar } from "./actions";
 
 const RESULTADO_LABEL: Record<string, string> = {
@@ -12,6 +16,56 @@ const RESULTADO_LABEL: Record<string, string> = {
   rejeitada: "Rejeitada",
 };
 
+function ConteudoEntrega({
+  tipoConteudo,
+  conteudo,
+  urlAssinada,
+}: {
+  tipoConteudo: string;
+  conteudo: string;
+  urlAssinada: string | null;
+}) {
+  if (tipoConteudo !== "arquivo") {
+    return (
+      <p className="text-sm whitespace-pre-wrap text-zinc-700 dark:text-zinc-300">
+        {conteudo}
+      </p>
+    );
+  }
+
+  if (!urlAssinada) {
+    return (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        Não foi possível carregar o arquivo agora.
+      </p>
+    );
+  }
+
+  if (ehImagem(conteudo)) {
+    return (
+      // URL assinada de curta duração, gerada por request — não faz
+      // sentido pré-otimizar via next/image, que exige uma URL estável.
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={urlAssinada}
+        alt="Imagem enviada como entrega"
+        className="max-h-96 w-full rounded-lg object-contain"
+      />
+    );
+  }
+
+  return (
+    <a
+      href={urlAssinada}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex w-fit items-center gap-2 rounded-full bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
+    >
+      📄 Abrir PDF
+    </a>
+  );
+}
+
 export default async function AvaliacaoPage({
   params,
   searchParams,
@@ -19,35 +73,34 @@ export default async function AvaliacaoPage({
   params: Promise<{ entregaId: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  await requireProfessor();
+  const user = await requireProfessor();
   const { entregaId } = await params;
   const { error } = await searchParams;
   const supabase = await createClient();
 
-  const { data: entrega } = await supabase
-    .from("entregas")
-    .select("id, conteudo, tipo_conteudo, numero_tentativa, enviada_em, participacao_id")
-    .eq("id", entregaId)
-    .single();
+  const contexto = await buscarEntregaComContexto(supabase, entregaId);
 
-  if (!entrega) {
+  if (!contexto) {
     notFound();
   }
 
-  const { data: participacao } = await supabase
-    .from("participacoes")
-    .select("id, aluno_id, missao_id")
-    .eq("id", entrega.participacao_id)
-    .single();
+  const podeAcessar = await usuarioPodeAcessarEntrega(
+    supabase,
+    contexto,
+    user.id,
+    "professor",
+  );
 
-  if (!participacao) {
-    notFound();
+  if (!podeAcessar) {
+    redirect(
+      `/dashboard?error=${encodeURIComponent("Você não tem acesso a essa entrega.")}`,
+    );
   }
 
   const { data: missao } = await supabase
     .from("missoes")
     .select("id, titulo, criterio_avaliacao")
-    .eq("id", participacao.missao_id)
+    .eq("id", contexto.missaoId)
     .single();
 
   if (!missao) {
@@ -57,7 +110,7 @@ export default async function AvaliacaoPage({
   const { data: aluno } = await supabase
     .from("profiles")
     .select("nome")
-    .eq("id", participacao.aluno_id)
+    .eq("id", contexto.alunoId)
     .single();
 
   const { data: avaliacaoExistente } = await supabase
@@ -69,10 +122,10 @@ export default async function AvaliacaoPage({
   const { data: todasEntregas } = await supabase
     .from("entregas")
     .select("id, numero_tentativa, conteudo, tipo_conteudo, enviada_em")
-    .eq("participacao_id", participacao.id)
+    .eq("participacao_id", contexto.participacaoId)
     .order("numero_tentativa", { ascending: true });
 
-  const historico = (todasEntregas ?? []).filter((e) => e.id !== entrega.id);
+  const historico = (todasEntregas ?? []).filter((e) => e.id !== entregaId);
 
   const historicoIds = historico.map((e) => e.id);
   const { data: avaliacoesHistorico } = historicoIds.length
@@ -84,6 +137,22 @@ export default async function AvaliacaoPage({
 
   const avaliacaoPorEntrega = new Map(
     (avaliacoesHistorico ?? []).map((a) => [a.entrega_id, a] as const),
+  );
+
+  const urlAssinadaAtual =
+    contexto.tipoConteudo === "arquivo"
+      ? await gerarUrlAssinadaArquivo(contexto.conteudo)
+      : null;
+
+  const urlsHistorico = new Map(
+    await Promise.all(
+      historico
+        .filter((e) => e.tipo_conteudo === "arquivo")
+        .map(
+          async (e) =>
+            [e.id, await gerarUrlAssinadaArquivo(e.conteudo)] as const,
+        ),
+    ),
   );
 
   return (
@@ -98,7 +167,8 @@ export default async function AvaliacaoPage({
           Avaliar: {aluno?.nome ?? "Aluno"} — {missao.titulo}
         </h1>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          {entrega.numero_tentativa}ª tentativa
+          {todasEntregas?.find((e) => e.id === entregaId)?.numero_tentativa}ª
+          tentativa
         </p>
       </div>
 
@@ -115,11 +185,19 @@ export default async function AvaliacaoPage({
         </Card>
         <Card>
           <p className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-            Entrega ({entrega.tipo_conteudo === "link" ? "link" : "texto"})
+            Entrega (
+            {contexto.tipoConteudo === "link"
+              ? "link"
+              : contexto.tipoConteudo === "arquivo"
+                ? "arquivo"
+                : "texto"}
+            )
           </p>
-          <p className="text-sm whitespace-pre-wrap text-zinc-700 dark:text-zinc-300">
-            {entrega.conteudo}
-          </p>
+          <ConteudoEntrega
+            tipoConteudo={contexto.tipoConteudo}
+            conteudo={contexto.conteudo}
+            urlAssinada={urlAssinadaAtual}
+          />
         </Card>
       </div>
 
@@ -142,9 +220,13 @@ export default async function AvaliacaoPage({
                       ? RESULTADO_LABEL[avaliacao.resultado]
                       : "Sem avaliação"}
                   </p>
-                  <p className="mt-1 whitespace-pre-wrap text-zinc-600 dark:text-zinc-400">
-                    {e.conteudo}
-                  </p>
+                  <div className="mt-1 text-zinc-600 dark:text-zinc-400">
+                    <ConteudoEntrega
+                      tipoConteudo={e.tipo_conteudo}
+                      conteudo={e.conteudo}
+                      urlAssinada={urlsHistorico.get(e.id) ?? null}
+                    />
+                  </div>
                   {avaliacao?.feedback && (
                     <p className="mt-1 text-zinc-500 italic dark:text-zinc-500">
                       Feedback: {avaliacao.feedback}
@@ -167,11 +249,21 @@ export default async function AvaliacaoPage({
               Feedback: {avaliacaoExistente.feedback}
             </p>
           )}
+          {(avaliacaoExistente.resultado === "aprovada" ||
+            avaliacaoExistente.resultado === "aprovada_com_ressalvas") && (
+            <div className="mt-3">
+              <Banner variant="info">
+                Aprovar uma entrega não conclui a missão automaticamente —
+                marque a missão como concluída na página dela quando julgar
+                que está pronta.
+              </Banner>
+            </div>
+          )}
         </Card>
       ) : (
         <Card>
           <form action={avaliar} className="flex flex-col gap-3">
-            <input type="hidden" name="entrega_id" value={entrega.id} />
+            <input type="hidden" name="entrega_id" value={entregaId} />
 
             <label className="flex flex-col gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">
               Feedback (obrigatório se rejeitar)

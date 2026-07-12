@@ -31,10 +31,24 @@ export async function loginViaUI(
   await page.waitForURL("**/dashboard");
 }
 
-export async function criarProjetoDeTeste(criadoPor: string, nome: string) {
+// Bloco 12: desde a migration 006, RLS de projetos/etapas/missoes/etc. é
+// escopada por vínculo (projeto_professores/projeto_alunos), não mais por
+// "qualquer professor" / "leitura geral". Todo projeto de teste precisa do
+// proprietário vinculado pra ficar visível ao professor de teste; passe
+// `alunoAceitoId` quando o teste também precisar que o aluno de teste
+// participe (RLS exige status 'aceito' em projeto_alunos pra isso).
+export async function criarProjetoDeTeste(
+  criadoPor: string,
+  nome: string,
+  opcoes?: { alunoAceitoId?: string; termoEspecifico?: string },
+) {
   const { data, error } = await supabaseAdmin
     .from("projetos")
-    .insert({ nome, criado_por: criadoPor })
+    .insert({
+      nome,
+      criado_por: criadoPor,
+      termo_especifico: opcoes?.termoEspecifico ?? null,
+    })
     .select("id")
     .single();
 
@@ -42,7 +56,79 @@ export async function criarProjetoDeTeste(criadoPor: string, nome: string) {
     throw new Error(`Falha ao criar projeto de teste: ${error?.message}`);
   }
 
-  return data.id as string;
+  const projetoId = data.id as string;
+
+  const { error: professorError } = await supabaseAdmin
+    .from("projeto_professores")
+    .insert({
+      projeto_id: projetoId,
+      professor_id: criadoPor,
+      papel_no_projeto: "proprietario",
+      adicionado_por: criadoPor,
+    });
+
+  if (professorError) {
+    throw new Error(
+      `Falha ao vincular professor de teste ao projeto: ${professorError.message}`,
+    );
+  }
+
+  if (opcoes?.alunoAceitoId) {
+    const { error: alunoError } = await supabaseAdmin
+      .from("projeto_alunos")
+      .insert({
+        projeto_id: projetoId,
+        aluno_id: opcoes.alunoAceitoId,
+        status: "aceito",
+        atribuido_por: criadoPor,
+        respondido_em: new Date().toISOString(),
+      });
+
+    if (alunoError) {
+      throw new Error(
+        `Falha ao vincular aluno de teste ao projeto: ${alunoError.message}`,
+      );
+    }
+  }
+
+  return projetoId;
+}
+
+// Seeds diretos das tabelas de vínculo do Bloco 12 — usados quando o teste
+// quer partir de um estado já pronto (ex: testar "remover colaborador" sem
+// precisar re-testar o fluxo de "adicionar" pela UI a cada vez).
+export async function adicionarColaboradorDeTeste(
+  projetoId: string,
+  professorId: string,
+  adicionadoPor: string,
+) {
+  const { error } = await supabaseAdmin.from("projeto_professores").insert({
+    projeto_id: projetoId,
+    professor_id: professorId,
+    papel_no_projeto: "colaborador",
+    adicionado_por: adicionadoPor,
+  });
+
+  if (error) {
+    throw new Error(`Falha ao adicionar colaborador de teste: ${error.message}`);
+  }
+}
+
+export async function atribuirAlunoDeTeste(
+  projetoId: string,
+  alunoId: string,
+  atribuidoPor: string,
+) {
+  const { error } = await supabaseAdmin.from("projeto_alunos").insert({
+    projeto_id: projetoId,
+    aluno_id: alunoId,
+    status: "convidado",
+    atribuido_por: atribuidoPor,
+  });
+
+  if (error) {
+    throw new Error(`Falha ao atribuir aluno de teste: ${error.message}`);
+  }
 }
 
 export async function criarEtapaDeTeste(

@@ -1,15 +1,24 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { verifySession } from "@/lib/auth/dal";
+import { requireOnboardingCompleto } from "@/lib/onboarding/dal";
 import { Banner, MissaoStatusBadge } from "@/app/_components/ui";
 import { SubmitButton } from "@/app/_components/submit-button";
+import { Tooltip } from "@/app/_components/tooltip";
+import { CONCEITOS } from "@/lib/conceitos/textos";
 import { tipoMissaoInfo } from "@/lib/missoes/constantes";
 import { buscarDependenciasComStatus } from "@/lib/missoes/buscar";
 import { calcularStatusMissao } from "@/lib/missoes/status";
 import { buscarParticipacoesComResultado } from "@/lib/participacoes/buscar";
 import { resumirParticipacoes } from "@/lib/participacoes/resumo";
-import { participar, enviarEntrega, marcarConcluida } from "./actions";
+import { precisaAceitarTermoEspecifico } from "@/lib/participacoes/validacoes";
+import {
+  participar,
+  enviarEntrega,
+  marcarConcluida,
+  aceitarTermoProjeto,
+} from "./actions";
+import { EntregaForm } from "./entrega-form";
 
 export default async function MissaoDetalhePage({
   params,
@@ -18,7 +27,7 @@ export default async function MissaoDetalhePage({
   params: Promise<{ id: string; etapaId: string; missaoId: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
-  const user = await verifySession();
+  const user = await requireOnboardingCompleto();
   const { id: projetoId, etapaId, missaoId } = await params;
   const { error } = await searchParams;
   const supabase = await createClient();
@@ -96,6 +105,33 @@ export default async function MissaoDetalhePage({
     (status === "disponivel" || status === "em_andamento");
   const vagasEsgotadas =
     podeParticiparAgora && (vagasPreenchidas ?? 0) >= missao.vagas;
+
+  // DECISIONS.md, "Termo específico por Projeto": só entra em jogo quando o
+  // projeto define um termo — aceite é por projeto, então vale pra qualquer
+  // missão dele, não só esta.
+  let termoPendente = false;
+  let termoEspecifico: string | null = null;
+
+  if (podeParticiparAgora) {
+    const { data: projeto } = await supabase
+      .from("projetos")
+      .select("termo_especifico")
+      .eq("id", projetoId)
+      .single();
+
+    const { data: vinculoAluno } = await supabase
+      .from("projeto_alunos")
+      .select("termo_aceito_em")
+      .eq("projeto_id", projetoId)
+      .eq("aluno_id", user.id)
+      .maybeSingle();
+
+    termoEspecifico = projeto?.termo_especifico ?? null;
+    termoPendente = precisaAceitarTermoEspecifico({
+      termoEspecifico,
+      termoAceitoEm: vinculoAluno?.termo_aceito_em ?? null,
+    });
+  }
 
   // Contexto pra decisão manual de "marcar como concluída" (professor).
   let resumoParticipacoes = null;
@@ -186,7 +222,7 @@ export default async function MissaoDetalhePage({
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-              Vagas
+              <Tooltip texto={CONCEITOS.vagas}>Vagas</Tooltip>
             </p>
             <p className="text-sm text-zinc-700 dark:text-zinc-300">
               {vagasPreenchidas ?? 0} de {missao.vagas} preenchidas
@@ -204,7 +240,7 @@ export default async function MissaoDetalhePage({
 
         <div>
           <p className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-            Dependências
+            <Tooltip texto={CONCEITOS.dependencia}>Dependências</Tooltip>
           </p>
           {dependencias.length === 0 ? (
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
@@ -254,7 +290,24 @@ export default async function MissaoDetalhePage({
         {/* Estado da Participação do aluno logado — só um bloco de ação
             por vez, de acordo com onde ele está no fluxo. */}
         {podeParticiparAgora &&
-          (vagasEsgotadas ? (
+          (termoPendente ? (
+            <div className="flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/40">
+              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                Termo específico deste projeto
+              </p>
+              <p className="text-sm whitespace-pre-wrap text-amber-800 dark:text-amber-200">
+                {termoEspecifico}
+              </p>
+              <form action={aceitarTermoProjeto} className="w-fit">
+                <input type="hidden" name="projeto_id" value={projetoId} />
+                <input type="hidden" name="etapa_id" value={etapaId} />
+                <input type="hidden" name="missao_id" value={missao.id} />
+                <SubmitButton pendingText="Registrando...">
+                  Li e concordo
+                </SubmitButton>
+              </form>
+            </div>
+          ) : vagasEsgotadas ? (
             <p className="mt-2 w-fit rounded-full bg-zinc-100 px-4 py-2 text-sm text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
               🚫 Vagas esgotadas.
             </p>
@@ -268,58 +321,24 @@ export default async function MissaoDetalhePage({
           ))}
 
         {participacao?.status === "em_andamento" && (
-          <form
+          <EntregaForm
             action={enviarEntrega}
-            className="flex flex-col gap-3 border-t border-zinc-100 pt-4 dark:border-zinc-800"
-          >
-            <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              {entregasExistentes > 0
+            projetoId={projetoId}
+            etapaId={etapaId}
+            missaoId={missao.id}
+            participacaoId={participacao.id}
+            titulo={
+              entregasExistentes > 0
                 ? `Reenviar — ${entregasExistentes + 1}ª tentativa de ${missao.limite_reenvios}`
-                : "Enviar entrega"}
-            </p>
-
-            <input type="hidden" name="projeto_id" value={projetoId} />
-            <input type="hidden" name="etapa_id" value={etapaId} />
-            <input type="hidden" name="missao_id" value={missao.id} />
-            <input
-              type="hidden"
-              name="participacao_id"
-              value={participacao.id}
-            />
-
-            <div className="flex gap-3 text-sm">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="tipo_conteudo"
-                  value="texto"
-                  defaultChecked
-                />
-                Texto
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="radio" name="tipo_conteudo" value="link" />
-                Link
-              </label>
-            </div>
-
-            <textarea
-              name="conteudo"
-              required
-              rows={4}
-              placeholder="Descreva o que você produziu, ou cole o link aqui..."
-              className="rounded-lg border border-zinc-300 px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-            />
-
-            <SubmitButton pendingText="Enviando..." className="w-fit">
-              Enviar
-            </SubmitButton>
-          </form>
+                : "Enviar entrega"
+            }
+          />
         )}
 
         {participacao?.status === "em_aprovacao" && (
           <p className="mt-2 w-fit rounded-full bg-amber-100 px-4 py-2 text-sm text-amber-700 dark:bg-amber-950 dark:text-amber-300">
-            🟠 Entrega enviada — aguardando avaliação do professor.
+            <Tooltip texto={CONCEITOS.statusEmAprovacao}>🟠</Tooltip> Entrega
+            enviada — aguardando avaliação do professor.
           </p>
         )}
 

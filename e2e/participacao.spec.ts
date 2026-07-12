@@ -17,6 +17,7 @@ test("aluno participa de uma missão e envia uma entrega", async ({ page }) => {
   const projetoId = await criarProjetoDeTeste(
     professor.id,
     `Projeto Participacao E2E ${Date.now()}`,
+    { alunoAceitoId: aluno.id },
   );
   const etapaId = await criarEtapaDeTeste(projetoId, "Descoberta", 1);
   const missaoId = await criarMissaoDeTeste(etapaId, "Missão Participável");
@@ -53,6 +54,7 @@ test("mostra 'vagas esgotadas' quando a única vaga já está ocupada", async ({
   const projetoId = await criarProjetoDeTeste(
     professor.id,
     `Projeto Vagas E2E ${Date.now()}`,
+    { alunoAceitoId: aluno.id },
   );
   const etapaId = await criarEtapaDeTeste(projetoId, "Descoberta", 1);
   // vagas = 1 (default do schema).
@@ -79,6 +81,7 @@ test("bloqueia envio de entrega quando o limite de reenvios já foi atingido", a
   const projetoId = await criarProjetoDeTeste(
     professor.id,
     `Projeto Reenvio E2E ${Date.now()}`,
+    { alunoAceitoId: aluno.id },
   );
   const etapaId = await criarEtapaDeTeste(projetoId, "Descoberta", 1);
   // limite_reenvios = 1 (default do schema).

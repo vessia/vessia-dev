@@ -2,12 +2,22 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { verifySession } from "@/lib/auth/dal";
 import { buscarMissoesAtrasadas, buscarPendenciasAvaliacao } from "@/lib/dashboard/professor";
+import { requireOnboardingCompleto } from "@/lib/onboarding/dal";
+import { buscarConvitesPendentes } from "@/lib/projetos/vinculos";
+import { Banner } from "@/app/_components/ui";
+import { SubmitButton } from "@/app/_components/submit-button";
+import { responderConvite } from "./actions";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
   // Defesa em profundidade: o proxy já redireciona quem não está logado,
   // mas a página não deve depender só dele (ver guia de auth do Next.js).
   // verifySession() faz esse check e redireciona para /login se preciso.
   const user = await verifySession();
+  const { error } = await searchParams;
   const supabase = await createClient();
 
   const { data: profile } = await supabase
@@ -17,18 +27,68 @@ export default async function DashboardPage() {
     .single();
 
   if (profile?.papel !== "professor") {
+    // Tarefa 29: aluno vê a trilha de boas-vindas antes de qualquer
+    // projeto — redireciona pra /onboarding enquanto não completar os 3
+    // itens. Professor nunca passa por esse gate.
+    await requireOnboardingCompleto();
+
+    const convites = await buscarConvitesPendentes(supabase, user.id);
+
     return (
-      <main className="flex flex-1 items-center justify-center p-4 sm:p-8">
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-8 p-4 sm:p-8">
         <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
           Olá, {profile?.nome ?? user.email}
         </h1>
+
+        {error && <Banner variant="error">{error}</Banner>}
+
+        {convites.length > 0 && (
+          <div className="flex flex-col gap-3">
+            <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-50">
+              Convites pendentes ({convites.length})
+            </h2>
+            <ul className="flex flex-col gap-3">
+              {convites.map((c) => (
+                <li
+                  key={c.projetoId}
+                  className="rounded-lg border border-zinc-200 bg-white p-4 text-sm dark:border-zinc-800 dark:bg-zinc-950"
+                >
+                  <p className="font-medium text-zinc-900 dark:text-zinc-50">
+                    {c.projetoNome}
+                  </p>
+                  {c.projetoDescricao && (
+                    <p className="mt-1 text-zinc-600 dark:text-zinc-300">
+                      {c.projetoDescricao}
+                    </p>
+                  )}
+                  <div className="mt-3 flex gap-3">
+                    <form action={responderConvite}>
+                      <input type="hidden" name="projeto_id" value={c.projetoId} />
+                      <input type="hidden" name="resposta" value="aceito" />
+                      <SubmitButton pendingText="Aceitando...">
+                        Aceitar
+                      </SubmitButton>
+                    </form>
+                    <form action={responderConvite}>
+                      <input type="hidden" name="projeto_id" value={c.projetoId} />
+                      <input type="hidden" name="resposta" value="recusado" />
+                      <SubmitButton variant="danger" pendingText="Recusando...">
+                        Recusar
+                      </SubmitButton>
+                    </form>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </main>
     );
   }
 
   const [pendencias, atrasadas] = await Promise.all([
-    buscarPendenciasAvaliacao(supabase, user.id),
-    buscarMissoesAtrasadas(supabase, user.id),
+    buscarPendenciasAvaliacao(supabase),
+    buscarMissoesAtrasadas(supabase),
   ]);
 
   return (

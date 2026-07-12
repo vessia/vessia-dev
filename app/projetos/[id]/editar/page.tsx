@@ -20,7 +20,7 @@ export default async function EditarProjetoPage({
   const supabase = await createClient();
   const { data: projeto } = await supabase
     .from("projetos")
-    .select("id, nome, descricao, cliente")
+    .select("id, nome, descricao, cliente, termo_especifico")
     .eq("id", id)
     .single();
 
@@ -30,7 +30,7 @@ export default async function EditarProjetoPage({
 
   return (
     <main className="flex flex-1 items-center justify-center p-4 sm:p-8">
-      <Card className="max-w-md">
+      <Card className="max-w-2xl">
         <form action={atualizarProjeto} className="flex flex-col gap-4">
           <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
             Editar projeto
@@ -50,10 +50,10 @@ export default async function EditarProjetoPage({
             />
           </Field>
 
-          <Field label="Descrição">
+          <Field label="Objetivo do projeto">
             <textarea
               name="descricao"
-              rows={3}
+              rows={6}
               defaultValue={projeto.descricao ?? ""}
               className={inputClass}
             />
@@ -64,6 +64,15 @@ export default async function EditarProjetoPage({
               type="text"
               name="cliente"
               defaultValue={projeto.cliente ?? ""}
+              className={inputClass}
+            />
+          </Field>
+
+          <Field label="Termo específico deste projeto (opcional)">
+            <textarea
+              name="termo_especifico"
+              rows={4}
+              defaultValue={projeto.termo_especifico ?? ""}
               className={inputClass}
             />
           </Field>

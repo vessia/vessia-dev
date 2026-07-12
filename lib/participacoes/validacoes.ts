@@ -2,22 +2,49 @@ import type { StatusMissao } from "@/lib/missoes/status";
 
 export type ResultadoValidacao =
   | { permitido: true }
-  | { permitido: false; motivo: string };
+  | { permitido: false; motivo: string; termoPendente?: true };
+
+// DECISIONS.md, "Termo específico por Projeto": se o projeto define um
+// termo, o aluno precisa aceitá-lo (registrando a data em
+// projeto_alunos.termo_aceito_em) antes de conseguir participar de
+// qualquer missão daquele projeto — aceite é por projeto, não por missão.
+// Compartilhada entre a tela (decide se mostra o bloco de aceite) e a
+// Server Action de participar (revalida), pra não duplicar a regra.
+export function precisaAceitarTermoEspecifico({
+  termoEspecifico,
+  termoAceitoEm,
+}: {
+  termoEspecifico: string | null;
+  termoAceitoEm: string | null;
+}): boolean {
+  return Boolean(termoEspecifico) && !termoAceitoEm;
+}
 
 // 04 - Modelo Conceitual.md, seção 7: uma Participação só pode ser criada
-// (a) se o aluno ainda não participa dessa missão, (b) em missão disponível
-// ou em andamento (nunca bloqueada/concluída), e (c) se ainda houver vaga.
+// (a) se o termo específico do projeto (quando existir) já foi aceito,
+// (b) se o aluno ainda não participa dessa missão, (c) em missão disponível
+// ou em andamento (nunca bloqueada/concluída), e (d) se ainda houver vaga.
 export function podeParticipar({
   statusMissao,
   vagas,
   participacoesExistentes,
   jaParticipa,
+  termoPendente,
 }: {
   statusMissao: StatusMissao;
   vagas: number;
   participacoesExistentes: number;
   jaParticipa: boolean;
+  termoPendente: boolean;
 }): ResultadoValidacao {
+  if (termoPendente) {
+    return {
+      permitido: false,
+      motivo: "Aceite o termo específico deste projeto antes de participar.",
+      termoPendente: true,
+    };
+  }
+
   if (jaParticipa) {
     return { permitido: false, motivo: "Você já participa dessa missão." };
   }

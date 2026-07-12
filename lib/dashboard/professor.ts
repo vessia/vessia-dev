@@ -17,14 +17,14 @@ export type MissaoAtrasada = {
   projetoNome: string;
 };
 
-async function buscarMissoesDoProfessor(
-  supabase: SupabaseClient,
-  professorId: string,
-) {
+// A RLS de "projetos: leitura por quem está vinculado" já escopa essa
+// consulta pro professor logado (proprietário OU colaborador, não só quem
+// criou — ver Modelo Conceitual §3.1), então não precisa de professorId
+// como parâmetro/filtro aqui.
+async function buscarMissoesDoProfessor(supabase: SupabaseClient) {
   const { data: projetos } = await supabase
     .from("projetos")
     .select("id, nome")
-    .eq("criado_por", professorId)
     .eq("status", "ativo");
 
   const listaProjetos = projetos ?? [];
@@ -53,10 +53,9 @@ async function buscarMissoesDoProfessor(
 // avaliação (Participação em_aprovacao) entre todos os projetos ativos.
 export async function buscarPendenciasAvaliacao(
   supabase: SupabaseClient,
-  professorId: string,
 ): Promise<PendenciaAvaliacao[]> {
   const { missoes, projetoPorEtapa, nomePorProjeto } =
-    await buscarMissoesDoProfessor(supabase, professorId);
+    await buscarMissoesDoProfessor(supabase);
 
   const missaoIds = missoes.map((m) => m.id);
   if (missaoIds.length === 0) return [];
@@ -127,10 +126,9 @@ export async function buscarPendenciasAvaliacao(
 // interface, não um status armazenado.
 export async function buscarMissoesAtrasadas(
   supabase: SupabaseClient,
-  professorId: string,
 ): Promise<MissaoAtrasada[]> {
   const { missoes, projetoPorEtapa, nomePorProjeto } =
-    await buscarMissoesDoProfessor(supabase, professorId);
+    await buscarMissoesDoProfessor(supabase);
 
   const agora = new Date().toISOString();
   const candidatas = missoes.filter(

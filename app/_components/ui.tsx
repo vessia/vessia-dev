@@ -1,5 +1,14 @@
 import type { ReactNode } from "react";
 import { STATUS_MISSAO_INFO, type StatusMissao } from "@/lib/missoes/status";
+import { CONCEITOS } from "@/lib/conceitos/textos";
+import { Tooltip } from "./tooltip";
+
+const CONCEITO_POR_STATUS: Record<StatusMissao, string> = {
+  bloqueada: CONCEITOS.statusBloqueada,
+  disponivel: CONCEITOS.statusDisponivel,
+  em_andamento: CONCEITOS.statusEmAndamento,
+  concluida: CONCEITOS.statusConcluida,
+};
 
 export const inputClass =
   "rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50";
@@ -76,11 +85,12 @@ export function MissaoStatusBadge({ status }: { status: StatusMissao }) {
   const info = STATUS_MISSAO_INFO[status];
 
   return (
-    <span
-      data-testid="missao-status-badge"
-      className={`inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${info.className}`}
+    <Tooltip
+      texto={CONCEITO_POR_STATUS[status]}
+      testId="missao-status-badge"
+      triggerClassName={`inline-flex w-fit items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${info.className}`}
     >
       {info.icone} {info.label}
-    </span>
+    </Tooltip>
   );
 }

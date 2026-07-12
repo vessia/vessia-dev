@@ -9,10 +9,24 @@ export async function cadastrar(formData: FormData) {
   const nome = String(formData.get("nome") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const senha = String(formData.get("senha") ?? "");
-  const papel = String(formData.get("papel") ?? "");
+  const aceiteTermos = formData.get("aceite_termos") === "on";
+  // Cadastro público só cria conta de Aluno (ver DECISIONS.md). Conta de
+  // Professor é criada diretamente pelo Gestor, fora dessa tela.
+  const papel = "aluno";
 
-  if (!nome || !email || !senha || (papel !== "professor" && papel !== "aluno")) {
+  if (!nome || !email || !senha) {
     redirect(`/cadastro?error=${encodeURIComponent("Preencha todos os campos.")}`);
+  }
+
+  // O `required` no checkbox é só UX — a Server Action revalida, mesmo
+  // padrão de duas camadas usado no resto do app (DECISIONS.md: aceite dos
+  // Termos é evidência de consentimento, não cosmético).
+  if (!aceiteTermos) {
+    redirect(
+      `/cadastro?error=${encodeURIComponent(
+        "É preciso concordar com os Termos de Uso e a Política de Privacidade para criar uma conta.",
+      )}`,
+    );
   }
 
   const headersList = await headers();
@@ -44,6 +58,7 @@ export async function cadastrar(formData: FormData) {
     id: data.user!.id,
     nome,
     papel,
+    termos_aceitos_em: new Date().toISOString(),
   });
 
   if (profileError) {

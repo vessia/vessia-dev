@@ -15,22 +15,31 @@ A partir daqui, qualquer ideia nova (gamificação, comentários, templates, mar
 - [x] CRUD de Missão (título, tipo, objetivo, entrega, critério, prazo, vagas, obrigatória, limite de reenvios, anexos)
 - [x] Dependências entre missões (com bloqueio de ciclo)
 - [x] Cálculo de status da Missão (bloqueada/disponível/em andamento/concluída — derivado, não armazenado)
+- [x] Cadastro público restrito a aluno (professor criado manualmente)
+- [x] Múltiplos professores por projeto (proprietário + colaboradores)
+- [x] Atribuição de aluno a projeto (convite → aceitar/recusar/sair/remover)
 
 ## Participação e avaliação
 - [x] Aluno participa de missão (com checagem de vaga e de duplicidade)
 - [x] Aluno envia entrega (com checagem de limite de reenvio)
 - [x] Professor avalia entrega (aprovar / aprovar com ressalvas / rejeitar, com feedback obrigatório em rejeição)
 - [x] Professor marca missão como concluída manualmente
-- [x] Desbloqueio automático de missões dependentes
+- [x] Desbloqueio automático de missões dependentes (confirmado via e2e/desbloqueio.spec.ts)
 
 ## Telas
-- [ ] Onboarding (Etapa 0)
+- [x] Onboarding (Etapa 0)
 - [x] Mapa do projeto (visão do aluno)
 - [x] Detalhe da missão (visão do aluno)
 - [x] Envio de entrega
 - [x] Dashboard do professor
 - [x] Avaliação de entrega (visão do professor)
 - [x] Criação/edição de missão (visão do professor)
+
+## Extensões pós-MVP (decididas em uso real, fora do escopo original)
+- [x] Upload de imagem/PDF na entrega (Storage privado + URL assinada)
+- [x] Termos de Uso e Política de Privacidade publicados, com aceite obrigatório e registrado
+- [x] Onboarding revisável (modo leitura após concluído)
+- [x] Tooltips explicativos nos conceitos do domínio
 
 ## Validação final
 - [ ] Bíblia 3D cadastrado do início ao fim (Etapa 0 + Descoberta, no mínimo)

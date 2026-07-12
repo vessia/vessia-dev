@@ -68,9 +68,56 @@ Avaliação (uma por entrega)
 
 **Relacionamentos:**
 - Um Projeto possui várias Etapas.
+- Um Projeto possui vários Professores vinculados (ver ProjetoProfessor, seção 3.1) — um deles é o proprietário, os demais são colaboradores.
+- Um Projeto possui vários Alunos atribuídos (ver ProjetoAluno, seção 3.2).
 
 **Regras de negócio:**
 - Um projeto não pode ser marcado como `encerrado` enquanto houver missões obrigatórias sem avaliação com resultado final (aprovada ou aprovada com ressalvas).
+- Quem cria o projeto vira automaticamente seu proprietário em ProjetoProfessor.
+- Leitura e escrita de Etapas, Missões e Avaliações dentro de um Projeto são restritas aos professores vinculados àquele projeto (proprietário ou colaborador) — não a "qualquer professor" da plataforma.
+
+---
+
+## 3.1 ProjetoProfessor
+
+**Finalidade:** vincula um ou mais professores a um Projeto, com diferenciação entre quem criou o projeto (proprietário) e quem foi convidado a colaborar.
+
+**Atributos:**
+- papel_no_projeto (`proprietario` | `colaborador`)
+- adicionado_por
+- adicionado_em
+
+**Relacionamentos:**
+- É uma relação N:N entre Projeto e Usuário (papel `professor`).
+
+**Regras de negócio:**
+- Todo Projeto tem exatamente um proprietário (criado junto com o Projeto).
+- Um Projeto pode ter zero ou mais colaboradores.
+- Só o proprietário pode adicionar ou remover outros professores do projeto.
+- Colaborador tem exatamente as mesmas permissões de escrita dentro do projeto (Etapas, Missões, Avaliações) que o proprietário — a única ação exclusiva do proprietário é gerenciar quem são os professores do projeto.
+
+---
+
+## 3.2 ProjetoAluno
+
+**Finalidade:** representa a atribuição de um aluno a um Projeto, controlada pelo professor — o aluno não se autoinscreve livremente.
+
+**Atributos:**
+- status (`convidado` | `aceito` | `recusado` | `saiu` | `removido`)
+- atribuido_por (professor que atribuiu)
+- atribuido_em
+- respondido_em (quando o aluno aceitou/recusou/saiu, ou quando foi removido)
+
+**Relacionamentos:**
+- É uma relação N:N entre Projeto e Usuário (papel `aluno`).
+
+**Regras de negócio:**
+- Professor cria a atribuição com status `convidado`.
+- Aluno responde: `aceito` ou `recusado`, enquanto o status for `convidado`.
+- Aluno com status `aceito` pode, a qualquer momento, mudar para `saiu` (sair do projeto por conta própria).
+- Professor pode, a qualquer momento que o status seja `aceito`, mudar para `removido`.
+- Aluno só enxerga e participa das Missões de um Projeto enquanto seu status ali for `aceito`.
+- Participações e Entregas já existentes de um aluno que saiu ou foi removido **permanecem visíveis como histórico** para o professor — não são apagadas. O aluno só perde a possibilidade de criar novas Participações ou Entregas naquele projeto.
 
 ---
 
@@ -178,6 +225,7 @@ Avaliação (uma por entrega)
 **Regras de negócio:**
 - Um aluno só pode ter uma Participação ativa por Missão (não participa da mesma missão duas vezes em paralelo).
 - Uma nova participação só pode ser criada em uma Missão com status `disponível` ou `em andamento`, e apenas se ainda houver vagas livres.
+- **Uma nova Participação só pode ser criada se o aluno tiver status `aceito` em ProjetoAluno para o Projeto ao qual a Missão pertence** — aluno convidado, recusado, que saiu ou foi removido não pode iniciar novas participações naquele projeto, mesmo que a missão esteja disponível.
 - O número de Entregas de uma Participação não pode ultrapassar o limite de reenvios definido na Missão.
 
 ---

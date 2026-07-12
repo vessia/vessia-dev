@@ -118,6 +118,73 @@ Nova missão desbloqueada aparece no mapa
 
 ---
 
+## 2.1 Casos de uso: Atribuição de professores e alunos
+
+### Caso de uso: Proprietário adiciona um colaborador ao Projeto
+
+1. Proprietário está na tela de gestão de professores do projeto.
+2. Busca um usuário com papel = 'professor' e o adiciona.
+3. Sistema verifica: quem está fazendo essa ação é o proprietário do projeto?
+   - Não → bloqueia (mesmo um colaborador não pode adicionar outro professor).
+   - Sim → segue.
+4. Cria a linha em ProjetoProfessor com papel_no_projeto = 'colaborador'.
+5. A partir daí, o novo professor tem exatamente as mesmas permissões de escrita no projeto 
+   (etapas, missões, avaliações) que o proprietário.
+
+### Caso de uso: Professor atribui um aluno ao Projeto
+
+1. Qualquer professor vinculado ao projeto (proprietário ou colaborador) busca um usuário 
+   com papel = 'aluno' e o atribui.
+2. Cria a linha em ProjetoAluno com status = 'convidado'.
+3. O aluno passa a ver o projeto (nome, descrição) na sua lista, marcado como convite 
+   pendente — mas ainda não vê etapas/missões.
+
+### Caso de uso: Aluno aceita ou recusa um convite
+
+1. Aluno abre um convite pendente.
+2. Escolhe aceitar ou recusar.
+3. Sistema verifica: o status atual é 'convidado'?
+   - Não → bloqueia (não é possível responder um convite já respondido).
+   - Sim → segue.
+4. Se aceitar: status vira 'aceito', respondido_em preenchido. Aluno passa a ver etapas e 
+   missões do projeto, e pode participar delas.
+5. Se recusar: status vira 'recusado', respondido_em preenchido. Aluno não vê mais o 
+   conteúdo do projeto (só que ele existiu e foi recusado, se quiser checar depois).
+
+### Caso de uso: Aluno sai de um Projeto
+
+1. Aluno com status 'aceito' aciona "Sair do projeto".
+2. Sistema verifica: o status atual é 'aceito'?
+   - Não → bloqueia.
+   - Sim → segue.
+3. Status vira 'saiu'. Aluno perde acesso a criar novas Participações ou Entregas nesse 
+   projeto. Participações e Entregas já existentes permanecem visíveis para o professor, 
+   como histórico.
+
+### Caso de uso: Professor remove um aluno do Projeto
+
+1. Professor vinculado ao projeto aciona "Remover" na lista de alunos.
+2. Sistema verifica: o aluno tem status 'aceito'?
+   - Não → bloqueia (não faz sentido remover quem nunca aceitou ou já saiu).
+   - Sim → segue.
+3. Status vira 'removido'. Mesma consequência de "sair": sem novas ações, histórico preservado.
+
+### Caso de uso: Aluno aceita o termo específico do Projeto
+
+1. Aluno com convite aceito tenta participar de uma missão do projeto pela primeira vez.
+2. Sistema verifica: o Projeto tem `termo_especifico` definido?
+   - Não → segue normalmente, nenhum passo extra.
+   - Sim → verifica se `termo_aceito_em` já está preenchido para esse aluno naquele projeto.
+     - Já aceito → segue normalmente.
+     - Ainda não aceito → mostra o texto do termo e exige aceite explícito antes de 
+       prosseguir; ao aceitar, preenche `termo_aceito_em` e só então permite criar 
+       a Participação.
+3. Aceitar o convite do projeto e aceitar o termo específico são ações distintas — o 
+   aluno pode ver do que se trata o projeto sem precisar concordar de imediato com as 
+   condições específicas dele.
+
+---
+
 ## 3. Estados visuais no mapa do aluno (derivados do Modelo Conceitual)
 
 Importante: os estados abaixo descrevem o que **um aluno específico** vê para uma missão — combinando o status da Missão (calculado, global) com o status da sua própria Participação (se houver). Duas pessoas podem ver estados diferentes para a mesma missão ao mesmo tempo (ex: João já participando e "em andamento", enquanto Ana ainda vê "disponível" porque há vaga sobrando).

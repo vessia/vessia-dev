@@ -14,7 +14,7 @@ export default async function NovoProjetoPage({
 
   return (
     <main className="flex flex-1 items-center justify-center p-4 sm:p-8">
-      <Card className="max-w-md">
+      <Card className="max-w-2xl">
         <form action={criarProjeto} className="flex flex-col gap-4">
           <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
             Novo projeto
@@ -26,12 +26,16 @@ export default async function NovoProjetoPage({
             <input type="text" name="nome" required className={inputClass} />
           </Field>
 
-          <Field label="Descrição">
-            <textarea name="descricao" rows={3} className={inputClass} />
+          <Field label="Objetivo do projeto">
+            <textarea name="descricao" rows={6} className={inputClass} />
           </Field>
 
           <Field label="Cliente">
             <input type="text" name="cliente" className={inputClass} />
+          </Field>
+
+          <Field label="Termo específico deste projeto (opcional)">
+            <textarea name="termo_especifico" rows={4} className={inputClass} />
           </Field>
 
           <div className="mt-2 flex items-center gap-4">
@@ -43,6 +47,10 @@ export default async function NovoProjetoPage({
               Cancelar
             </Link>
           </div>
+
+          <p className="text-xs text-zinc-400 dark:text-zinc-500">
+            Toda jornada começa pela Descoberta.
+          </p>
         </form>
       </Card>
     </main>

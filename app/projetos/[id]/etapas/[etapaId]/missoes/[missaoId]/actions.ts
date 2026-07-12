@@ -4,7 +4,12 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAluno, requireProfessor } from "@/lib/auth/dal";
 import { buscarMissoesComStatus } from "@/lib/missoes/buscar";
-import { podeEnviarEntrega, podeParticipar } from "@/lib/participacoes/validacoes";
+import {
+  podeEnviarEntrega,
+  podeParticipar,
+  precisaAceitarTermoEspecifico,
+} from "@/lib/participacoes/validacoes";
+import { validarArquivoEntrega } from "@/lib/entregas/validacao-arquivo";
 
 function caminhoMissao(projetoId: string, etapaId: string, missaoId: string) {
   return `/projetos/${projetoId}/etapas/${etapaId}/missoes/${missaoId}`;
@@ -47,11 +52,32 @@ export async function participar(formData: FormData) {
     .eq("aluno_id", user.id)
     .maybeSingle();
 
+  // DECISIONS.md, "Termo específico por Projeto": revalida aqui mesmo que a
+  // tela já esconda o botão "Participar" quando o termo está pendente —
+  // mesma checagem (não duplicada), usada também pra decidir o que a tela
+  // mostra.
+  const { data: projeto } = await supabase
+    .from("projetos")
+    .select("termo_especifico")
+    .eq("id", projetoId)
+    .single();
+
+  const { data: vinculoAluno } = await supabase
+    .from("projeto_alunos")
+    .select("termo_aceito_em")
+    .eq("projeto_id", projetoId)
+    .eq("aluno_id", user.id)
+    .maybeSingle();
+
   const resultado = podeParticipar({
     statusMissao: missaoAtual?.status ?? "bloqueada",
     vagas: missao.vagas,
     participacoesExistentes: participacoesExistentes ?? 0,
     jaParticipa: Boolean(participacaoDoAluno),
+    termoPendente: precisaAceitarTermoEspecifico({
+      termoEspecifico: projeto?.termo_especifico ?? null,
+      termoAceitoEm: vinculoAluno?.termo_aceito_em ?? null,
+    }),
   });
 
   if (!resultado.permitido) {
@@ -72,6 +98,31 @@ export async function participar(formData: FormData) {
         ? "Você já participa dessa missão."
         : error.message;
     redirect(`${destino}?error=${encodeURIComponent(mensagem)}`);
+  }
+
+  redirect(destino);
+}
+
+export async function aceitarTermoProjeto(formData: FormData) {
+  const user = await requireAluno();
+
+  const projetoId = String(formData.get("projeto_id") ?? "");
+  const etapaId = String(formData.get("etapa_id") ?? "");
+  const missaoId = String(formData.get("missao_id") ?? "");
+  const destino = caminhoMissao(projetoId, etapaId, missaoId);
+
+  const supabase = await createClient();
+
+  // Aceite é por projeto, não por missão (DECISIONS.md) — grava direto em
+  // projeto_alunos, sem precisar saber qual missão trouxe o aluno até aqui.
+  const { error } = await supabase
+    .from("projeto_alunos")
+    .update({ termo_aceito_em: new Date().toISOString() })
+    .eq("projeto_id", projetoId)
+    .eq("aluno_id", user.id);
+
+  if (error) {
+    redirect(`${destino}?error=${encodeURIComponent(error.message)}`);
   }
 
   redirect(destino);
@@ -109,16 +160,41 @@ export async function enviarEntrega(formData: FormData) {
   const etapaId = String(formData.get("etapa_id") ?? "");
   const missaoId = String(formData.get("missao_id") ?? "");
   const participacaoId = String(formData.get("participacao_id") ?? "");
-  const conteudo = String(formData.get("conteudo") ?? "").trim();
   const tipoConteudo = String(formData.get("tipo_conteudo") ?? "");
   const destino = caminhoMissao(projetoId, etapaId, missaoId);
 
-  if (!conteudo) {
-    redirect(`${destino}?error=${encodeURIComponent("Preencha o conteúdo da entrega.")}`);
+  if (
+    tipoConteudo !== "texto" &&
+    tipoConteudo !== "link" &&
+    tipoConteudo !== "arquivo"
+  ) {
+    redirect(`${destino}?error=${encodeURIComponent("Selecione o tipo de conteúdo.")}`);
   }
 
-  if (tipoConteudo !== "texto" && tipoConteudo !== "link") {
-    redirect(`${destino}?error=${encodeURIComponent("Selecione o tipo de conteúdo.")}`);
+  let conteudo = "";
+  let arquivo: File | null = null;
+
+  if (tipoConteudo === "arquivo") {
+    const candidato = formData.get("arquivo");
+    if (!(candidato instanceof File) || candidato.size === 0) {
+      redirect(`${destino}?error=${encodeURIComponent("Selecione um arquivo para enviar.")}`);
+    }
+
+    const validacao = validarArquivoEntrega({
+      tipo: candidato.type,
+      tamanhoBytes: candidato.size,
+    });
+
+    if (!validacao.permitido) {
+      redirect(`${destino}?error=${encodeURIComponent(validacao.motivo)}`);
+    }
+
+    arquivo = candidato;
+  } else {
+    conteudo = String(formData.get("conteudo") ?? "").trim();
+    if (!conteudo) {
+      redirect(`${destino}?error=${encodeURIComponent("Preencha o conteúdo da entrega.")}`);
+    }
   }
 
   const supabase = await createClient();
@@ -156,6 +232,29 @@ export async function enviarEntrega(formData: FormData) {
 
   if (!resultado.permitido) {
     redirect(`${destino}?error=${encodeURIComponent(resultado.motivo)}`);
+  }
+
+  if (arquivo) {
+    // Convenção de path: docs/009_storage_entregas_imagens.sql —
+    // {aluno_id}/{participacao_id}/{numero_tentativa}/{nome_arquivo}.
+    const nomeArquivo = arquivo.name
+      .normalize("NFKD")
+      .replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `${user.id}/${participacaoId}/${resultado.numeroTentativa}/${nomeArquivo}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("entregas-arquivos")
+      .upload(path, arquivo, { contentType: arquivo.type, upsert: false });
+
+    if (uploadError) {
+      redirect(
+        `${destino}?error=${encodeURIComponent(
+          "Não foi possível enviar o arquivo: " + uploadError.message,
+        )}`,
+      );
+    }
+
+    conteudo = path;
   }
 
   const { error: entregaError } = await supabase.from("entregas").insert({

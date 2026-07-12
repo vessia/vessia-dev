@@ -38,19 +38,35 @@ export default async function CadastroPage({
             />
           </Field>
 
-          <fieldset className="flex flex-col gap-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            <legend className="mb-0.5">Papel</legend>
-            <div className="flex gap-3">
-              <label className="flex flex-1 cursor-pointer items-center justify-center rounded-lg border border-zinc-300 px-4 py-2 text-sm font-normal text-zinc-700 transition has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 has-[:checked]:text-blue-700 dark:border-zinc-700 dark:text-zinc-300 dark:has-[:checked]:border-blue-400 dark:has-[:checked]:bg-blue-950/40 dark:has-[:checked]:text-blue-300">
-                <input type="radio" name="papel" value="professor" required className="sr-only" />
-                Professor
-              </label>
-              <label className="flex flex-1 cursor-pointer items-center justify-center rounded-lg border border-zinc-300 px-4 py-2 text-sm font-normal text-zinc-700 transition has-[:checked]:border-blue-600 has-[:checked]:bg-blue-50 has-[:checked]:text-blue-700 dark:border-zinc-700 dark:text-zinc-300 dark:has-[:checked]:border-blue-400 dark:has-[:checked]:bg-blue-950/40 dark:has-[:checked]:text-blue-300">
-                <input type="radio" name="papel" value="aluno" required className="sr-only" />
-                Aluno
-              </label>
-            </div>
-          </fieldset>
+          <label className="flex items-start gap-2 text-sm text-zinc-600 dark:text-zinc-300">
+            <input
+              type="checkbox"
+              name="aceite_termos"
+              required
+              className="mt-0.5"
+            />
+            <span>
+              Li e concordo com os{" "}
+              <Link
+                href="/termos"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-blue-600 underline dark:text-blue-400"
+              >
+                Termos de Uso
+              </Link>{" "}
+              e a{" "}
+              <Link
+                href="/privacidade"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-blue-600 underline dark:text-blue-400"
+              >
+                Política de Privacidade
+              </Link>
+              .
+            </span>
+          </label>
 
           <SubmitButton pendingText="Criando..." className="mt-2 w-full">
             Criar conta

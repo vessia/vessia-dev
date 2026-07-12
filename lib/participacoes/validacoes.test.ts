@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { podeEnviarEntrega, podeParticipar, validarAvaliacao } from "./validacoes";
+import {
+  podeEnviarEntrega,
+  podeParticipar,
+  precisaAceitarTermoEspecifico,
+  validarAvaliacao,
+} from "./validacoes";
 
 describe("podeParticipar", () => {
   it("rejeita se o aluno já participa da missão", () => {
@@ -8,6 +13,7 @@ describe("podeParticipar", () => {
       vagas: 5,
       participacoesExistentes: 1,
       jaParticipa: true,
+      termoPendente: false,
     });
 
     expect(resultado.permitido).toBe(false);
@@ -22,6 +28,7 @@ describe("podeParticipar", () => {
       vagas: 5,
       participacoesExistentes: 0,
       jaParticipa: false,
+      termoPendente: false,
     });
 
     expect(resultado.permitido).toBe(false);
@@ -33,6 +40,7 @@ describe("podeParticipar", () => {
       vagas: 5,
       participacoesExistentes: 0,
       jaParticipa: false,
+      termoPendente: false,
     });
 
     expect(resultado.permitido).toBe(false);
@@ -44,6 +52,7 @@ describe("podeParticipar", () => {
       vagas: 2,
       participacoesExistentes: 0,
       jaParticipa: false,
+      termoPendente: false,
     });
 
     expect(resultado.permitido).toBe(true);
@@ -55,6 +64,7 @@ describe("podeParticipar", () => {
       vagas: 2,
       participacoesExistentes: 1,
       jaParticipa: false,
+      termoPendente: false,
     });
 
     expect(resultado.permitido).toBe(true);
@@ -66,12 +76,57 @@ describe("podeParticipar", () => {
       vagas: 2,
       participacoesExistentes: 2,
       jaParticipa: false,
+      termoPendente: false,
     });
 
     expect(resultado.permitido).toBe(false);
     if (!resultado.permitido) {
       expect(resultado.motivo).toMatch(/vaga/i);
     }
+  });
+
+  it("rejeita com sinal 'termoPendente' quando o termo específico ainda não foi aceito, mesmo com tudo mais liberado", () => {
+    const resultado = podeParticipar({
+      statusMissao: "disponivel",
+      vagas: 5,
+      participacoesExistentes: 0,
+      jaParticipa: false,
+      termoPendente: true,
+    });
+
+    expect(resultado.permitido).toBe(false);
+    if (!resultado.permitido) {
+      expect(resultado.termoPendente).toBe(true);
+    }
+  });
+});
+
+describe("precisaAceitarTermoEspecifico", () => {
+  it("não precisa quando o projeto não define termo específico", () => {
+    expect(
+      precisaAceitarTermoEspecifico({
+        termoEspecifico: null,
+        termoAceitoEm: null,
+      }),
+    ).toBe(false);
+  });
+
+  it("precisa quando o projeto define termo e o aluno ainda não aceitou", () => {
+    expect(
+      precisaAceitarTermoEspecifico({
+        termoEspecifico: "Este trabalho não tem caráter trabalhista...",
+        termoAceitoEm: null,
+      }),
+    ).toBe(true);
+  });
+
+  it("não precisa mais depois que o aluno já aceitou", () => {
+    expect(
+      precisaAceitarTermoEspecifico({
+        termoEspecifico: "Este trabalho não tem caráter trabalhista...",
+        termoAceitoEm: "2026-07-12T10:00:00.000Z",
+      }),
+    ).toBe(false);
   });
 });
 

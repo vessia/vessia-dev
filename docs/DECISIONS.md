@@ -124,6 +124,90 @@ Log de decisões de produto e engenharia, no formato Contexto / Decisão / Conse
 
 ---
 
+### 2026-07 — Onboarding não reaproveita Missão/Participação/Entrega/Avaliação
+**Contexto:** os 3 itens da Etapa 0 são autoavaliados pelo próprio aluno, sem entrega nem aprovação do professor — encaixar isso no fluxo de Missão real exigiria estados especiais espalhados por todo o domínio principal.
+**Decisão:** tabela dedicada `onboarding_progresso` (aluno_id, item, concluido_em), com os 3 itens fixos no código, fora do modelo de Projeto/Etapa/Missão.
+**Consequência:** onboarding fica desacoplado do domínio principal — mais simples de raciocinar, sem contaminar as regras de Missão com um caso especial. Se no futuro o onboarding precisar variar por contexto (não só Empresa Júnior), essa tabela precisará ser revisitada.
+
+---
+
+### 2026-07 — Cadastro público não pode mais criar conta de Professor
+**Contexto:** validação com dados reais (Bloco 11) revelou que qualquer pessoa podia se autocadastrar como professor, com escrita total via RLS em qualquer projeto — risco de segurança real, não hipotético.
+**Decisão:** remover a opção "professor" do formulário público de `/cadastro`; cadastro público só cria conta de aluno. A(s) conta(s) de professor são criadas manualmente (hoje, uma única conta, a do Gestor).
+**Consequência:** nenhum painel de admin é necessário para isso agora — só existe um professor. Um painel de administração para criar/gerenciar múltiplos professores fica adiado até existir essa necessidade real.
+
+---
+
+### 2026-07 — Nomes de perfil configuráveis / white-label recusado novamente
+**Contexto:** a mesma ideia de generalização (motor de templates, marketplace, white label, multi-tenant) reapareceu, desta vez como "admin configura os nomes dos papéis".
+**Decisão:** não construir. Continua valendo a decisão já registrada de que isso só entra quando existir um segundo cliente real, não hipotético.
+**Consequência:** nenhuma mudança de modelo. Papéis continuam sendo o enum fixo `professor`/`aluno`.
+
+---
+
+### 2026-07 — Canvas infinito (tipo Excalidraw/n8n) para o mapa de missões — adiado
+**Contexto:** ideia de substituir a lista atual do mapa por um editor visual em nós e conexões.
+**Decisão:** tecnicamente factível (ex: biblioteca React Flow), mas não entra agora — reformularia uma tela que já está construída, testada, e ainda nem foi validada com alunos reais.
+**Consequência:** registrado como evolução de UX futura, sem nenhuma mudança no MVP atual.
+
+---
+
+### 2026-07 — Projeto passa a ter múltiplos professores (proprietário + colaboradores)
+**Contexto:** requisito real, não hipotético — o próprio Bíblia 3D, primeiro projeto real, já tem pelo menos 2 professores.
+**Decisão:** nova entidade `ProjetoProfessor` (projeto + professor + papel: proprietário ou colaborador). Quem cria o projeto vira proprietário automaticamente. Só o proprietário pode adicionar/remover outros professores do projeto. Colaborador tem exatamente as mesmas permissões de escrita dentro do projeto (etapas, missões, avaliações) que o proprietário — a única diferença é não poder gerenciar quem mais é professor daquele projeto.
+**Consequência:** escrita em etapas/missões/avaliações deixa de ser "qualquer professor" e passa a ser "professor vinculado àquele projeto especificamente" — muda a RLS de várias tabelas, não só a interface.
+
+---
+
+### 2026-07 — Aluno precisa ser atribuído a um projeto pelo professor, não escolhe livremente
+**Contexto:** requisito real — o fluxo correto é o professor decidir quem participa de qual projeto, não o aluno se autoinscrever em qualquer projeto que veja.
+**Decisão:** nova entidade `ProjetoAluno` (projeto + aluno + status: convidado / aceito / recusado / saiu / removido). Professor atribui (cria como "convidado"); aluno aceita ou recusa; aluno pode sair a qualquer momento depois de aceitar; professor pode remover a qualquer momento depois de aceitar. Aluno só enxerga e participa das missões de um projeto quando o status é "aceito".
+**Consequência:** leitura de projeto/etapas/missões deixa de ser geral para qualquer autenticado e passa a ser escopada pela atribuição. Ao sair ou ser removido, participações e entregas já existentes daquele aluno **permanecem como histórico** (o professor continua vendo o que foi feito), mas o aluno perde a possibilidade de agir novamente naquele projeto.
+
+---
+
+### 2026-07 — Entregas passam a suportar upload de imagem e PDF
+**Contexto:** necessidade real de uso — alunos da Empresa Júnior (usuários adultos da Vessia, não confundir com as crianças que são o público final do curso Bíblia 3D) precisam poder mandar imagem (ex: print de código, desenho, foto de anotação) ou PDF (ex: PRD do projeto, documento escrito) como entrega, não só texto/link. O campo `tipo_conteudo = 'arquivo'` já existia no schema desde o Bloco 6, mas tinha sido deliberadamente deixado sem implementação (ver decisão do Bloco 6 sobre anexos simplificados).
+**Decisão:** usar Supabase Storage (bucket privado). `entregas.conteudo` passa a guardar o caminho do arquivo no Storage quando `tipo_conteudo = 'arquivo'`. Upload restrito a tipos de imagem comuns (png, jpg/jpeg, webp, gif) e PDF, com limite de tamanho (5MB para imagem, 10MB para PDF) nesta primeira versão. Leitura do arquivo é feita via URL assinada de curta duração, gerada no servidor depois de confirmar que quem pede pertence ao projeto daquela entrega (mesma checagem de acesso já usada em todo o resto — não duplicada nas policies do Storage).
+**Consequência:** não muda o modelo de dados (o campo já existia); é implementação da opção que já estava prevista. Outros tipos de arquivo (áudio, vídeo, etc.) ficam fora por ora — ampliar é trivial (só mudar a whitelist) se a necessidade aparecer.
+
+---
+
+### 2026-07 — Termos de Uso e Política de Privacidade publicados como rascunho
+**Contexto:** obrigação legal básica de qualquer produto que trata dados pessoais — usuários da Vessia são adultos (Empresa Júnior), não as crianças do curso Bíblia 3D (essas nunca usam a Vessia diretamente).
+**Decisão:** publicar um rascunho real (não placeholder) em `TERMOS-E-PRIVACIDADE.md`, exigir aceite explícito no cadastro, revisar com advogado antes de qualquer uso em maior escala.
+**Consequência:** campos marcados "[A DEFINIR]" no documento (base legal específica, e-mail de contato, foro) precisam ser preenchidos antes da revisão jurídica formal.
+
+---
+
+### 2026-07 — Onboarding passa a ser revisável, não só um gate único
+**Contexto:** hoje a Etapa 0 só aparece uma vez, bloqueando o acesso até ser concluída; não havia forma de revisitar o conteúdo depois.
+**Decisão:** manter o gate para quem ainda não completou, mas permitir acesso a qualquer momento (modo leitura) para quem já completou, via link visível na navegação.
+**Consequência:** nenhuma mudança de modelo — onboarding_progresso já registra o que foi concluído; só muda o comportamento de acesso à rota.
+
+---
+
+### 2026-07 — Tooltips explicativos nos conceitos do domínio
+**Contexto:** reduzir a chance de o usuário ficar sem entender um termo (Missão, Vagas, Dependência, status) sem precisar reler a documentação ou perguntar.
+**Decisão:** componente de tooltip reutilizável, com texto derivado das definições já existentes em `01 - Visão.md` (seção 4 — Conceitos), aplicado nos pontos de maior ambiguidade da interface.
+**Consequência:** copy centralizado (não duplicado por tela), para não haver definições divergentes do mesmo conceito em lugares diferentes.
+
+---
+
+### 2026-07 — Termo específico por Projeto (opcional), separado dos Termos de Uso globais
+**Contexto:** necessidade real — no contexto do Bíblia 3D, os alunos precisam reconhecer explicitamente que o trabalho não tem caráter trabalhista, não prevê remuneração, e é de natureza pedagógica, antes de participar de qualquer missão. Isso é específico daquele projeto, não da plataforma como um todo — outro projeto pode não precisar de nada disso.
+**Decisão:** `Projeto` ganha um campo opcional `termo_especifico` (texto, definido pelo professor ao criar/editar o projeto). `ProjetoAluno` ganha `termo_aceito_em`. Se o projeto tem termo definido, o aluno precisa aceitá-lo (registrando a data) antes de conseguir criar sua primeira Participação naquele projeto — mesmo já estando com o convite aceito. Se o projeto não define termo nenhum, esse passo simplesmente não existe (`termo_aceito_em` fica sempre nulo, sem bloquear nada).
+**Consequência:** aceitar o convite do projeto e aceitar o termo do projeto são dois fatos distintos, verificados separadamente — não a mesma ação. Isso é intencional: o aluno pode ver do que se trata o projeto antes de precisar concordar com as condições específicas dele.
+
+---
+
+### 2026-07 — Criação de novo Projeto temporariamente desativada por feature flag
+**Contexto:** hoje só existe um projeto real (Bíblia 3D), com mais de um professor vinculado. Sem um painel de admin ainda, Caio quer controlar manualmente quando novos projetos podem ser criados, para evitar que um colaborador crie um projeto separado por engano em vez de atuar dentro do Bíblia 3D.
+**Decisão:** feature flag (variável de ambiente, checada no servidor, não só escondendo o botão) desativa a ação de criar projeto para todo mundo, incluindo o proprietário — não é uma permissão por papel ou por usuário, é um interruptor geral e temporário.
+**Consequência:** reversível trocando a variável de ambiente, sem precisar de deploy de código novo. Não muda o modelo de permissões — colaboradores continuam com todas as permissões de professor (criar etapas/missões, avaliar) dentro dos projetos aos quais já estão vinculados, conforme já decidido. Isso deixa de ser necessário assim que existir um painel de admin (ver TECH-DEBT.md).
+
+---
+
 ### 2026-07 — Casos de Uso e Jornada do Usuário fundidos em um documento
 **Contexto:** os dois descreviam a mesma informação (fluxos do sistema) por ângulos diferentes (por ação vs. por papel), o que inflaria a documentação sem reduzir ambiguidade nova.
 **Decisão:** um único documento (`05 - Fluxos.md`) cobre casos de uso e jornada por papel.

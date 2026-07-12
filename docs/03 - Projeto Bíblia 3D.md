@@ -9,7 +9,7 @@ Versão 0.1 — Julho de 2026
 
 - **Projeto:** Bíblia 3D
 - **Cliente:** Fuctura Tecnologia
-- **O que é:** um curso para crianças aprenderem programação.
+- **O que é:** um painel do aluno (portal/aplicativo) para o curso Bíblia 3D — um dos cursos de programação para crianças oferecidos pela Fuctura (que também tem cursos para adultos, como modalidade separada). O produto que este projeto entrega é o painel, não o curso em si; as crianças são o público final de quem vai usar o painel, não usuárias da Vessia.
 - **Restrição de escopo explícita:** apesar do nome, nenhum conteúdo religioso entra no escopo deste projeto. Isso deve ser reforçado na entrevista inicial, para não haver ambiguidade com quem for entrevistado.
 - **Status atual:** nada foi feito ainda. Nenhuma entrevista aconteceu. Este documento cobre apenas a etapa Descoberta — as demais etapas serão detalhadas depois que o PRD for escrito e aprovado, conforme o `02 - Método da Empresa Júnior.md`.
 
@@ -69,8 +69,8 @@ Estas são as missões do projeto propriamente dito, disponíveis depois que o a
 
 ### Missão 2 — Montar roteiro de entrevista do Bíblia 3D
 - **Tipo:** Escrever.
-- **Objetivo:** adaptar o roteiro oficial ao contexto específico do Bíblia 3D — um curso de programação para crianças.
-- **Entrega:** roteiro adaptado (perguntas sobre o problema que o curso resolve, faixa etária das crianças, formato de ensino desejado, e confirmação explícita de que o escopo é só programação, sem conteúdo religioso).
+- **Objetivo:** adaptar o roteiro oficial ao contexto específico do Bíblia 3D — entender o curso de programação para crianças (faixa etária, formato de ensino) o suficiente para desenhar o painel do aluno que vai apoiá-lo.
+- **Entrega:** roteiro adaptado (perguntas sobre o problema que o painel do aluno precisa resolver, faixa etária das crianças que usarão o painel, formato de ensino do curso que o painel precisa refletir, e confirmação explícita de que o escopo é só programação, sem conteúdo religioso).
 - **Critério de avaliação:** o roteiro cobre objetivo do curso, faixa etária, formato (presencial/remoto, duração), e inclui a pergunta de confirmação de escopo não-religioso.
 - **Dependências:** Estudar modelo de entrevista.
 - **Obrigatória:** sim.
@@ -79,7 +79,7 @@ Estas são as missões do projeto propriamente dito, disponíveis depois que o a
 
 ### Missão 3 — Entrevistar responsável pelo Bíblia 3D
 - **Tipo:** Entrevistar.
-- **Objetivo:** entender, com quem conhece o projeto na Fuctura, o que o curso precisa ser.
+- **Objetivo:** entender, com quem conhece o projeto na Fuctura, o que o painel do aluno precisa ser para apoiar o curso Bíblia 3D.
 - **Entrega:** anotações ou gravação da entrevista.
 - **Critério de avaliação:** todas as perguntas do roteiro foram respondidas; ficou claro o que o curso deve ensinar e para qual faixa etária.
 - **Dependências:** Montar roteiro de entrevista do Bíblia 3D.
@@ -111,7 +111,7 @@ Estas são as missões do projeto propriamente dito, disponíveis depois que o a
 
 ## 5. Etapas seguintes (PRD, Planejamento, Desenvolvimento, Testes, Entrega)
 
-Ainda não detalhadas. Segundo o método, elas nascem depois que a Descoberta terminar e o PRD do Bíblia 3D for escrito — não faz sentido definir "Criar Personas" ou missões de desenvolvimento antes de saber, por exemplo, se o curso será uma plataforma própria, um material didático, ou outra coisa. Quando a etapa Descoberta estiver concluída e aprovada, este documento é atualizado com a etapa PRD.
+Ainda não detalhadas. Segundo o método, elas nascem depois que a Descoberta terminar e o PRD do Bíblia 3D for escrito — não faz sentido definir "Criar Personas" ou missões de desenvolvimento antes de saber, por exemplo, se o painel do aluno será uma plataforma web própria, um aplicativo, ou outra coisa. Quando a etapa Descoberta estiver concluída e aprovada, este documento é atualizado com a etapa PRD.
 
 ---
 

@@ -1,17 +1,19 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { verifySession } from "@/lib/auth/dal";
+import { requireOnboardingCompleto } from "@/lib/onboarding/dal";
 import { MissaoStatusBadge } from "@/app/_components/ui";
 import { tipoMissaoInfo } from "@/lib/missoes/constantes";
 import { buscarMissoesComStatus } from "@/lib/missoes/buscar";
+import { Tooltip } from "@/app/_components/tooltip";
+import { CONCEITOS } from "@/lib/conceitos/textos";
 
 export default async function EtapaDetalhePage({
   params,
 }: {
   params: Promise<{ id: string; etapaId: string }>;
 }) {
-  const user = await verifySession();
+  const user = await requireOnboardingCompleto();
   const { id: projetoId, etapaId } = await params;
   const supabase = await createClient();
 
@@ -81,7 +83,7 @@ export default async function EtapaDetalhePage({
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-medium text-zinc-900 dark:text-zinc-50">
-            Missões
+            <Tooltip texto={CONCEITOS.missao}>Missões</Tooltip>
           </h2>
           {ehProfessor && missoesComStatus.length > 0 && (
             <Link

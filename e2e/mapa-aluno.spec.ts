@@ -17,6 +17,7 @@ test("aluno navega pelo mapa do projeto: progresso, status e detalhe da missão"
   const projetoId = await criarProjetoDeTeste(
     professor.id,
     `Projeto Mapa Aluno E2E ${Date.now()}`,
+    { alunoAceitoId: aluno.id },
   );
   const etapaId = await criarEtapaDeTeste(projetoId, "Descoberta", 1);
 

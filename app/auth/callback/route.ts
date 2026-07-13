@@ -17,6 +17,18 @@ export async function GET(request: Request) {
     }
   }
 
+  // Recuperação de senha (DECISIONS.md, "Recuperação de senha implementada")
+  // usa este mesmo callback — se o código falhar (link expirado ou já
+  // usado), a mensagem certa depende de qual fluxo trouxe o usuário até
+  // aqui, não é sempre sobre confirmação de e-mail.
+  if (next === "/redefinir-senha") {
+    return NextResponse.redirect(
+      `${origin}/recuperar-senha?error=${encodeURIComponent(
+        "Link expirado ou inválido. Solicite um novo link.",
+      )}`,
+    );
+  }
+
   return NextResponse.redirect(
     `${origin}/login?error=${encodeURIComponent(
       "Não foi possível confirmar o e-mail. Tente entrar novamente ou solicite um novo link.",

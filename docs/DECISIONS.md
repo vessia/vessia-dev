@@ -257,6 +257,13 @@ Log de decisões de produto e engenharia, no formato Contexto / Decisão / Conse
 
 ---
 
+### 2026-07 — Recuperação de senha implementada
+**Contexto:** nunca existiu além de um mockup no `06 - Telas.md` — e com usuários reais entrando na plataforma agora (segundo professor, alunos), esquecimento de senha vira um problema operacional real, não hipotético. Sem isso, Caio é o único caminho de recuperação, via reset manual no Supabase.
+**Decisão:** usar o fluxo nativo do Supabase Auth (`resetPasswordForEmail` + `updateUser`), aproveitando o SMTP (Resend) já configurado — sem inventar mecanismo próprio.
+**Consequência:** dois novos endpoints públicos (`/recuperar-senha`, `/redefinir-senha`), sem mudança de schema.
+
+---
+
 ### 2026-07 — Casos de Uso e Jornada do Usuário fundidos em um documento
 **Contexto:** os dois descreviam a mesma informação (fluxos do sistema) por ângulos diferentes (por ação vs. por papel), o que inflaria a documentação sem reduzir ambiguidade nova.
 **Decisão:** um único documento (`05 - Fluxos.md`) cobre casos de uso e jornada por papel.

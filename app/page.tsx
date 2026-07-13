@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Card } from "@/app/_components/ui";
+import { getOptionalUser } from "@/lib/auth/dal";
 
 // 01 - Visão.md, seções 0 e 1: identidade e proposta central do produto.
 // Landing só existe pra dar contexto a quem cai aqui sem saber o que é a
@@ -21,7 +23,15 @@ const PASSOS = [
   },
 ] as const;
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Landing é só pra quem ainda não conhece a Vessia — quem já tem sessão
+  // não precisa ver "Entrar"/"Criar conta" de novo, vai direto pro
+  // dashboard.
+  const user = await getOptionalUser();
+  if (user) {
+    redirect("/dashboard");
+  }
+
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-16 p-4 py-16 sm:p-8 sm:py-24">
       <section className="flex flex-col items-center gap-6 text-center">
@@ -29,8 +39,8 @@ export default function HomePage() {
           Projetos reais, organizados em missões claras
         </h1>
         <p className="max-w-md text-zinc-600 dark:text-zinc-300">
-          Vessia organiza a execução de projetos reais em missões claras — a
-          Empresa Júnior da Fuctura é o primeiro time usando a plataforma.
+          Da entrevista com o cliente à entrega final: um mapa único que
+          mostra onde o projeto está e o que falta.
         </p>
         <div className="flex gap-4">
           <Link

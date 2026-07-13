@@ -1,30 +1,22 @@
 # Termos de Uso e Política de Privacidade — Vessia
 ## Rascunho para revisão jurídica — não publicar sem validação de advogado
 
-Versão 0.1 — Julho de 2026
+Versão 0.2 — Julho de 2026
 
-> Este documento é um rascunho de trabalho, escrito para dar um ponto de partida concreto 
-> a uma revisão jurídica — não é aconselhamento legal e não deve ser publicado como está. 
-> Antes de colocar isso no ar, um advogado deve revisar especialmente: a base legal de 
-> tratamento de dados, o texto de consentimento, e a adequação à LGPD e a qualquer 
-> regulação setorial aplicável.
 
----
 
 ## Termos de Uso
 
 ### 1. Sobre a Vessia
 
-A Vessia é uma plataforma para organizar a execução de projetos reais da Empresa Júnior 
-da Fuctura Tecnologia, através de missões com dependências e acompanhamento por 
-professores. Este documento se aplica a todos os usuários da plataforma (professores e 
-alunos).
+A Vessia é uma plataforma para organizar a execução de projetos reais através de missões 
+com dependências, prazos e acompanhamento por professores. Este documento se aplica a 
+todos os usuários da plataforma (professores e alunos).
 
 ### 2. Quem pode usar
 
-O uso da Vessia é destinado a maiores de 18 anos, vinculados à Empresa Júnior da Fuctura 
-Tecnologia como aluno ou professor. Contas de professor são criadas apenas pela 
-administração da Fuctura; contas de aluno são atribuídas a projetos por um professor 
+O uso da Vessia é destinado a maiores de 18 anos. Contas de professor são criadas pela 
+administração da plataforma; contas de aluno são atribuídas a projetos por um professor 
 responsável.
 
 ### 3. Conta e responsabilidade pelo acesso
@@ -46,8 +38,8 @@ A Vessia pode remover conteúdo que viole estes termos, mediante aviso quando po
 ### 5. Uso aceitável
 
 É proibido: tentar acessar dados de outro usuário sem permissão; interferir no 
-funcionamento da plataforma; usar a plataforma para fins fora do contexto da Empresa 
-Júnior da Fuctura.
+funcionamento da plataforma; usar a plataforma para fins fora do contexto para o qual a 
+conta foi concedida.
 
 ### 6. Alterações
 
@@ -56,8 +48,8 @@ ativos.
 
 ### 7. Lei aplicável
 
-Estes termos são regidos pela lei brasileira. Fica eleito o foro [A DEFINIR — 
-recomenda-se comarca da sede da Fuctura] para dirimir eventuais controvérsias.
+Estes termos são regidos pela lei brasileira. Fica eleito o foro da comarca de Olinda/PE 
+para dirimir eventuais controvérsias.
 
 ---
 
@@ -65,8 +57,12 @@ recomenda-se comarca da sede da Fuctura] para dirimir eventuais controvérsias.
 
 ### 1. Quem trata os dados
 
-A Fuctura Tecnologia é responsável pelo tratamento dos dados pessoais coletados através 
-da Vessia. Contato para assuntos de privacidade: [E-MAIL A DEFINIR].
+Caio de Matos Vital, pessoa física, é responsável pelo tratamento dos dados pessoais 
+coletados através da Vessia. Contato para assuntos de privacidade: caiomvital@gmail.com.
+
+> Nota de revisão: este responsável é provisório — assim que a operação da Vessia for 
+> formalizada como empresa (CNPJ), este campo deve ser atualizado para a pessoa jurídica 
+> correspondente, e o restante do documento revisado à luz dessa mudança.
 
 ### 2. Quais dados são coletados
 
@@ -81,32 +77,32 @@ etc.) nem solicita esse tipo de informação em nenhum fluxo.
 
 ### 3. Para que os dados são usados
 
-- Organizar e acompanhar a execução dos projetos da Empresa Júnior.
+- Organizar e acompanhar a execução de projetos.
 - Permitir que professores avaliem entregas e acompanhem o progresso dos alunos.
 - Comunicação relacionada ao uso da plataforma.
 
 Os dados não são usados para publicidade, não são vendidos, e não são compartilhados com 
-terceiros fora da Fuctura Tecnologia.
+terceiros.
 
 ### 4. Quem tem acesso
 
 - O próprio usuário, aos seus dados.
 - Professores vinculados a um projeto específico têm acesso aos dados de participação e 
   entregas dos alunos atribuídos àquele projeto — não a alunos de outros projetos.
-- A administração da Fuctura Tecnologia, para fins de gestão da Empresa Júnior.
+- O responsável pela plataforma (ver seção 1), para fins de administração e suporte.
 
 ### 5. Por quanto tempo os dados ficam guardados
 
 Os dados permanecem enquanto a conta estiver ativa e pelo tempo necessário para fins 
-pedagógicos e de registro histórico da Empresa Júnior. Um usuário pode solicitar exclusão 
-a qualquer momento (ver seção 7).
+pedagógicos e de registro histórico dos projetos. Um usuário pode solicitar exclusão a 
+qualquer momento (ver seção 7).
 
 ### 6. Base legal (LGPD)
 
 O tratamento de dados nesta plataforma se baseia [A CONFIRMAR COM ADVOGADO — 
 provavelmente consentimento do titular (Art. 7º, I) para o cadastro, e execução de 
-programa de aprendizagem/legítimo interesse educacional da Fuctura para os dados de 
-participação em projetos (Art. 7º, IX), mas isso precisa de validação jurídica formal].
+programa de aprendizagem/legítimo interesse educacional para os dados de participação em 
+projetos (Art. 7º, IX), mas isso precisa de validação jurídica formal].
 
 ### 7. Direitos do titular
 
@@ -114,7 +110,7 @@ Nos termos da LGPD, o usuário pode solicitar, a qualquer momento: confirmação
 dados são tratados, acesso aos dados, correção de dados incompletos ou desatualizados, 
 anonimização ou eliminação de dados, informação sobre com quem os dados são 
 compartilhados, e revogação do consentimento. Solicitações podem ser feitas em 
-[E-MAIL A DEFINIR].
+caiomvital@gmail.com.
 
 ### 8. Cookies e sessão
 
@@ -130,12 +126,18 @@ deste documento.
 
 ## Notas para quem for revisar (não faz parte do texto publicado)
 
-- Campos marcados "[A DEFINIR]" precisam ser preenchidos antes da publicação.
-- A base legal da seção 6 é a parte mais sensível — vale atenção especial do advogado, 
-  já que muda a validade de todo o resto do documento.
+- Nenhuma menção à Fuctura ou à Empresa Júnior neste documento — decisão explícita, 
+  registrada em `DECISIONS.md`. Contexto de negócio (quem usa hoje) fica só nos 
+  documentos internos (`01 - Visão.md`, `03 - Projeto Bíblia 3D.md`), não nos documentos 
+  públicos.
+- O responsável legal (seção 1 da Privacidade) é Caio, pessoa física, até a operação ser 
+  formalizada como empresa — isso é o item mais provisório do documento inteiro e deve 
+  ser revisitado antes de qualquer crescimento de escala.
+- A base legal da seção 6 continua sendo a parte mais sensível — vale atenção especial do 
+  advogado, já que muda a validade de todo o resto do documento.
 - Falta decidir: o cadastro vai ter uma caixa de "li e concordo" obrigatória antes de 
-  criar a conta? (Recomendado — ver prompt de implementação equivalente.)
-- Este texto assume usuários adultos (Empresa Júnior). Se em algum momento a Vessia 
-  passar a ser usada por menores de idade diretamente (não é o caso hoje — o público 
-  infantil é do curso Bíblia 3D, não da própria Vessia), este documento precisa ser 
-  revisto do zero, com as exigências do Art. 14 da LGPD sobre dados de crianças.
+  criar a conta? (Já implementado — ver `DECISIONS.md`, "Termos de Uso e Política de 
+  Privacidade publicados como rascunho".)
+- Este texto assume usuários adultos. Se em algum momento a Vessia passar a ser usada por 
+  menores de idade diretamente, este documento precisa ser revisto do zero, com as 
+  exigências do Art. 14 da LGPD sobre dados de crianças.

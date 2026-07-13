@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { supabaseAdmin } from "./supabase-admin";
+import { lerUsuariosDeTeste, loginViaUI } from "./helpers";
 
 const SENHA = "senha-teste-vessia-123";
 
@@ -71,5 +72,24 @@ test.describe("proteção de rotas", () => {
   test("acessar /projetos sem sessão redireciona para /login", async ({ page }) => {
     await page.goto("/projetos");
     await expect(page).toHaveURL(/\/login\?next=%2Fprojetos/);
+  });
+});
+
+test.describe("landing (/)", () => {
+  test("visitante sem sessão vê a landing de marketing", async ({ page }) => {
+    await page.goto("/");
+    await expect(page).toHaveURL("/");
+    await expect(
+      page.getByRole("heading", { name: "Projetos reais, organizados em missões claras" }),
+    ).toBeVisible();
+    await expect(page.getByRole("main").getByRole("link", { name: "Entrar" })).toBeVisible();
+  });
+
+  test("usuário autenticado é redirecionado direto para /dashboard", async ({ page }) => {
+    const { aluno } = lerUsuariosDeTeste();
+    await loginViaUI(page, aluno);
+
+    await page.goto("/");
+    await expect(page).toHaveURL(/\/dashboard/);
   });
 });

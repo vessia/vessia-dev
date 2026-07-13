@@ -112,6 +112,20 @@ export default async function AlunosDoProjetoPage({
                     </SubmitButton>
                   </form>
                 )}
+                {(a.status === "saiu" ||
+                  a.status === "removido" ||
+                  a.status === "recusado") && (
+                  <form action={atribuirAluno}>
+                    <input type="hidden" name="projeto_id" value={projetoId} />
+                    <input type="hidden" name="aluno_id" value={a.alunoId} />
+                    <SubmitButton
+                      pendingText="Reconvidando..."
+                      className="!px-3 !py-1 text-xs"
+                    >
+                      Reconvidar
+                    </SubmitButton>
+                  </form>
+                )}
               </li>
             ))}
           </ul>

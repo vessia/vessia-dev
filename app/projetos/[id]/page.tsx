@@ -3,14 +3,13 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireOnboardingCompleto } from "@/lib/onboarding/dal";
 import { StatusBadge, MissaoStatusBadge, Banner } from "@/app/_components/ui";
-import { SubmitButton } from "@/app/_components/submit-button";
 import { Tooltip } from "@/app/_components/tooltip";
 import { CONCEITOS } from "@/lib/conceitos/textos";
 import { buscarMissoesComStatus } from "@/lib/missoes/buscar";
 import { calcularProgressoEtapa } from "@/lib/etapas/progresso";
 import { tipoMissaoInfo } from "@/lib/missoes/constantes";
 import { buscarVinculoAlunoNoProjeto } from "@/lib/projetos/vinculos";
-import { sairDoProjeto } from "./alunos/actions";
+import { SairDoProjetoForm } from "./sair-do-projeto-form";
 
 const MENSAGEM_POR_STATUS: Record<string, string> = {
   convidado:
@@ -136,12 +135,7 @@ export default async function ProjetoDetalhePage({
       ) : (
         <>
           {!ehProfessor && vinculoAluno === "aceito" && (
-            <form action={sairDoProjeto} className="w-fit">
-              <input type="hidden" name="projeto_id" value={projeto.id} />
-              <SubmitButton variant="danger" pendingText="Saindo...">
-                Sair do projeto
-              </SubmitButton>
-            </form>
+            <SairDoProjetoForm projetoId={projeto.id} nomeProjeto={projeto.nome} />
           )}
 
           <ConteudoDoProjeto

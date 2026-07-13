@@ -16,6 +16,45 @@ export async function atribuirAluno(formData: FormData) {
   }
 
   const supabase = await createClient();
+
+  const { data: atual } = await supabase
+    .from("projeto_alunos")
+    .select("status")
+    .eq("projeto_id", projetoId)
+    .eq("aluno_id", alunoId)
+    .maybeSingle();
+
+  // DECISIONS.md, "Professor pode reconvidar aluno...": quem já saiu, foi
+  // removido ou recusou o convite pode ser convidado de novo — reabre a
+  // mesma linha (reseta o ciclo de resposta) em vez de tentar inserir uma
+  // nova, que colidiria com a chave primária (projeto_id, aluno_id).
+  // termo_aceito_em não é tocado — aceite de termo específico, se existir,
+  // continua valendo. 'convidado'/'aceito' cai no insert abaixo, que
+  // continua barrando com a mesma mensagem de sempre.
+  if (
+    atual &&
+    (atual.status === "saiu" ||
+      atual.status === "removido" ||
+      atual.status === "recusado")
+  ) {
+    const { error } = await supabase
+      .from("projeto_alunos")
+      .update({
+        status: "convidado",
+        atribuido_por: user.id,
+        atribuido_em: new Date().toISOString(),
+        respondido_em: null,
+      })
+      .eq("projeto_id", projetoId)
+      .eq("aluno_id", alunoId);
+
+    if (error) {
+      redirect(`${destino}?error=${encodeURIComponent(error.message)}`);
+    }
+
+    redirect(destino);
+  }
+
   const { error } = await supabase.from("projeto_alunos").insert({
     projeto_id: projetoId,
     aluno_id: alunoId,

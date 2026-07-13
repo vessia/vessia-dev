@@ -255,6 +255,9 @@ test("aluno aceito sai do projeto e o status muda para 'Você saiu' na lista", a
   await expect(
     page.getByRole("button", { name: "Sair do projeto" }),
   ).toBeVisible();
+  // DECISIONS.md, "Confirmação antes de sair de um projeto" — dialog
+  // nativo agora precisa ser aceito, senão o Playwright descarta sozinho.
+  page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Sair do projeto" }).click();
   await page.waitForURL("**/projetos");
 
@@ -303,3 +306,69 @@ test("professor remove aluno aceito e ele perde acesso ao conteúdo do projeto",
     page.getByText("Você foi removido deste projeto pelo professor."),
   ).toBeVisible();
 });
+
+// DECISIONS.md, "Professor pode reconvidar aluno que saiu, foi removido ou
+// recusou": UPDATE reabrindo a mesma linha em vez de INSERT (que colidiria
+// com a chave primária projeto_id+aluno_id).
+for (const statusInicial of ["removido", "saiu", "recusado"] as const) {
+  test(`professor reconvida aluno com status '${statusInicial}' e o convite volta a valer`, async ({
+    page,
+  }) => {
+    test.setTimeout(60_000);
+    const { professor } = lerUsuariosDeTeste();
+    const alunoAvulso = await criarUsuarioAvulsoDeTeste(
+      "aluno",
+      `Aluno Reconvite ${statusInicial} E2E ${Date.now()}`,
+    );
+    const projetoId = await criarProjetoDeTeste(
+      professor.id,
+      `Projeto Reconvite ${statusInicial} E2E ${Date.now()}`,
+    );
+
+    try {
+      // Estado inicial direto no banco — não precisa repetir pela UI o
+      // fluxo inteiro até chegar em cada um dos três status.
+      const { error: seedError } = await supabaseAdmin
+        .from("projeto_alunos")
+        .insert({
+          projeto_id: projetoId,
+          aluno_id: alunoAvulso.id,
+          status: statusInicial,
+          atribuido_por: professor.id,
+          respondido_em: new Date().toISOString(),
+        });
+      if (seedError) {
+        throw new Error(`Falha ao semear status inicial: ${seedError.message}`);
+      }
+
+      await loginViaUI(page, professor);
+      await page.goto(`/projetos/${projetoId}/alunos`);
+
+      const linha = page
+        .getByRole("listitem")
+        .filter({ hasText: alunoAvulso.nome });
+      await expect(linha).toBeVisible();
+      await linha.getByRole("button", { name: "Reconvidar" }).click();
+
+      await expect(
+        page
+          .locator("li", { hasText: alunoAvulso.nome })
+          .filter({ hasText: "Convidado (aguardando resposta)" }),
+      ).toBeVisible();
+
+      const { data } = await supabaseAdmin
+        .from("projeto_alunos")
+        .select("status, respondido_em, atribuido_por")
+        .eq("projeto_id", projetoId)
+        .eq("aluno_id", alunoAvulso.id)
+        .single();
+
+      expect(data?.status).toBe("convidado");
+      expect(data?.respondido_em).toBeNull();
+      expect(data?.atribuido_por).toBe(professor.id);
+    } finally {
+      await supabaseAdmin.from("projetos").delete().eq("id", projetoId);
+      await supabaseAdmin.auth.admin.deleteUser(alunoAvulso.id);
+    }
+  });
+}

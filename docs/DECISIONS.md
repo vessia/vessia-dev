@@ -289,3 +289,17 @@ Log de decisões de produto e engenharia, no formato Contexto / Decisão / Conse
 **Contexto:** a sugestão inicial era Spring Boot/Java/Angular, mas isso ignora a stack que o Gestor já opera em produção em outros projetos (Zapte, RankBR, desenho do página-aluno). Java aqui é o assunto do curso que a Empresa Júnior ensina, não necessariamente a stack de implementação da própria plataforma.
 **Decisão:** Next.js (frontend + backend via API routes), Supabase (Postgres + Auth), Tailwind para estilo.
 **Consequência:** reaproveita conhecimento e infraestrutura já dominados, reduz a curva de implementação solo. Pode ser revisto se surgir um motivo técnico concreto durante a implementação.
+
+---
+
+### 2026-07 — Confirmação antes de sair de um projeto
+**Contexto:** validação real com o caio_aluno — "Sair do projeto" executava direto, sem nenhuma confirmação, apesar de ser uma ação que o aluno não desfaz sozinho (precisa ser reconvidado pelo professor).
+**Decisão:** dialog nativo do navegador (`window.confirm`) antes de submeter, explicando a consequência ("perde acesso a novas missões", "histórico continua visível pro professor"). Não precisa de modal customizado.
+**Consequência:** pequeno Client Component (`sair-do-projeto-form.tsx`) só pra hospedar o `onSubmit` — a Server Action em si não muda.
+
+---
+
+### 2026-07 — Professor pode reconvidar aluno que saiu, foi removido ou recusou
+**Contexto:** validação real com o caio_professor — atribuir de novo um aluno com uma linha existente em `projeto_alunos` (status `saiu`, `removido` ou `recusado`) colidia com a chave primária `(projeto_id, aluno_id)`, e a busca de atribuição já escondia esse aluno da lista de resultados (por já ter uma linha), então nem dava pra tentar de novo pela interface.
+**Decisão:** a Server Action de atribuir aluno passa a fazer UPDATE (reabrindo a mesma linha: status volta pra `convidado`, `atribuido_por`/`atribuido_em` atualizados, `respondido_em` volta pra null) quando já existe uma linha nesses três status, em vez de tentar inserir uma nova. `termo_aceito_em` não é tocado. Status `convidado`/`aceito` continuam com o erro de duplicidade de sempre — não faz sentido atribuir de novo. Um botão "Reconvidar" foi adicionado na lista de alunos do projeto para esses três status.
+**Consequência:** nenhuma mudança de schema — só lógica de aplicação (mesmo padrão de "duas camadas" já usado em outras validações do app).

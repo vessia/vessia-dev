@@ -104,7 +104,9 @@ export default async function MissaoDetalhePage({
     !participacao &&
     (status === "disponivel" || status === "em_andamento");
   const vagasEsgotadas =
-    podeParticiparAgora && (vagasPreenchidas ?? 0) >= missao.vagas;
+    podeParticiparAgora &&
+    missao.vagas !== null &&
+    (vagasPreenchidas ?? 0) >= missao.vagas;
 
   // DECISIONS.md, "Termo específico por Projeto": só entra em jogo quando o
   // projeto define um termo — aceite é por projeto, então vale pra qualquer
@@ -225,7 +227,9 @@ export default async function MissaoDetalhePage({
               <Tooltip texto={CONCEITOS.vagas}>Vagas</Tooltip>
             </p>
             <p className="text-sm text-zinc-700 dark:text-zinc-300">
-              {vagasPreenchidas ?? 0} de {missao.vagas} preenchidas
+              {missao.vagas === null
+                ? `${vagasPreenchidas ?? 0} participando (sem limite)`
+                : `${vagasPreenchidas ?? 0} de ${missao.vagas} preenchidas`}
             </p>
           </div>
           {!missao.obrigatoria && (

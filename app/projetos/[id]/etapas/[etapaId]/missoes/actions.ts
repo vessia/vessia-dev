@@ -24,7 +24,8 @@ function lerCamposMissao(formData: FormData) {
   ).trim();
   const prazoRaw = String(formData.get("prazo") ?? "");
   const prazo = prazoRaw ? new Date(prazoRaw).toISOString() : null;
-  const vagas = Number(formData.get("vagas") ?? "1");
+  const vagasRaw = String(formData.get("vagas") ?? "").trim();
+  const vagas = vagasRaw ? Number(vagasRaw) : null;
   const obrigatoria = formData.get("obrigatoria") === "on";
   const limiteReenvios = Number(formData.get("limite_reenvios") ?? "1");
   const dependencias = formData.getAll("dependencias").map(String);
@@ -52,8 +53,11 @@ function validarCamposMissao(
   if (!campos.objetivo) return "Objetivo é obrigatório.";
   if (!campos.entregaEsperada) return "Entrega esperada é obrigatória.";
   if (!campos.criterioAvaliacao) return "Critério de avaliação é obrigatório.";
-  if (!Number.isFinite(campos.vagas) || campos.vagas < 1) {
-    return "Vagas deve ser pelo menos 1.";
+  if (
+    campos.vagas !== null &&
+    (!Number.isFinite(campos.vagas) || campos.vagas < 1)
+  ) {
+    return "Vagas deve ser pelo menos 1, ou em branco para sem limite.";
   }
   if (!Number.isFinite(campos.limiteReenvios) || campos.limiteReenvios < 0) {
     return "Limite de reenvios não pode ser negativo.";

@@ -110,14 +110,14 @@ export default async function NovaMissaoPage({
             <Field label="Prazo (opcional)">
               <input type="datetime-local" name="prazo" className={inputClass} />
             </Field>
-            <Field label="Vagas">
+            <Field label="Vagas (deixe em branco para sem limite)">
               <input
                 type="number"
                 name="vagas"
                 min={1}
                 step={1}
                 defaultValue={1}
-                required
+                placeholder="Sem limite"
                 className={inputClass}
               />
             </Field>

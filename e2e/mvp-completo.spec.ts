@@ -24,6 +24,7 @@ async function criarUsuarioMvpDeTeste(
   const { error: profileError } = await supabaseAdmin.from("profiles").insert({
     id: data.user.id,
     nome,
+    email,
     papel,
   });
 

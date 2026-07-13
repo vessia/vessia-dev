@@ -85,6 +85,18 @@ describe("podeParticipar", () => {
     }
   });
 
+  it("permite participar mesmo com muitas participações existentes quando vagas é null (sem limite)", () => {
+    const resultado = podeParticipar({
+      statusMissao: "disponivel",
+      vagas: null,
+      participacoesExistentes: 999,
+      jaParticipa: false,
+      termoPendente: false,
+    });
+
+    expect(resultado.permitido).toBe(true);
+  });
+
   it("rejeita com sinal 'termoPendente' quando o termo específico ainda não foi aceito, mesmo com tudo mais liberado", () => {
     const resultado = podeParticipar({
       statusMissao: "disponivel",

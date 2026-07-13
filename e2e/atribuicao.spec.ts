@@ -33,6 +33,7 @@ async function criarUsuarioAvulsoDeTeste(
   const { error: profileError } = await supabaseAdmin.from("profiles").insert({
     id: data.user.id,
     nome,
+    email,
     papel,
   });
 
@@ -64,7 +65,9 @@ test("proprietário adiciona colaborador pela UI, e o colaborador passa a editar
   try {
     await loginViaUI(page, professor);
     await page.goto(`/projetos/${projetoId}/professores`);
-    await page.getByLabel("Buscar professor por nome").fill(colaborador.nome);
+    await page
+      .getByLabel("Buscar professor por nome ou e-mail")
+      .fill(colaborador.nome);
     await page.getByRole("button", { name: "Buscar" }).click();
     await page
       .getByRole("listitem")
@@ -150,7 +153,7 @@ test("professor atribui aluno pela UI, aluno vê o convite no dashboard e aceita
 
   await loginViaUI(page, professor);
   await page.goto(`/projetos/${projetoId}/alunos`);
-  await page.getByLabel("Buscar aluno por nome").fill(aluno.nome);
+  await page.getByLabel("Buscar aluno por nome ou e-mail").fill(aluno.nome);
   await page.getByRole("button", { name: "Buscar" }).click();
   await page
     .getByRole("listitem")
@@ -172,6 +175,47 @@ test("professor atribui aluno pela UI, aluno vê o convite no dashboard e aceita
   await page.goto(`/projetos/${projetoId}`);
   await expect(page.getByText("Etapas")).toBeVisible();
   await expect(page.getByTestId("banner-info")).toHaveCount(0);
+});
+
+test("professor busca colaborador por e-mail (não só nome) e consegue adicionar", async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  const { professor } = lerUsuariosDeTeste();
+  const projetoId = await criarProjetoDeTeste(
+    professor.id,
+    `Projeto Busca Email E2E ${Date.now()}`,
+  );
+  const colaborador = await criarUsuarioAvulsoDeTeste(
+    "professor",
+    `Colaborador Busca Email E2E ${Date.now()}`,
+  );
+
+  try {
+    await loginViaUI(page, professor);
+    await page.goto(`/projetos/${projetoId}/professores`);
+    // Busca só pelo e-mail — nome digitado não tem nenhuma relação com ele.
+    await page
+      .getByLabel("Buscar professor por nome ou e-mail")
+      .fill(colaborador.email);
+    await page.getByRole("button", { name: "Buscar" }).click();
+
+    await expect(
+      page.getByRole("listitem").filter({ hasText: colaborador.email }),
+    ).toBeVisible();
+    await page
+      .getByRole("listitem")
+      .filter({ hasText: colaborador.email })
+      .getByRole("button", { name: "Adicionar" })
+      .click();
+
+    await expect(
+      page.locator("li", { hasText: colaborador.nome }),
+    ).toContainText("Colaborador");
+  } finally {
+    await supabaseAdmin.from("projetos").delete().eq("id", projetoId);
+    await supabaseAdmin.auth.admin.deleteUser(colaborador.id);
+  }
 });
 
 test("aluno recusa o convite e vê mensagem informativa na página do projeto", async ({

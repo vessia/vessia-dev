@@ -215,6 +215,41 @@ Log de decisões de produto e engenharia, no formato Contexto / Decisão / Conse
 
 ---
 
+### 2026-07 — Termos de Uso e Privacidade não mencionam a Fuctura
+**Contexto:** a Vessia não é um produto da Fuctura — a Fuctura é o primeiro caso de uso, não a dona da plataforma. Os documentos legais (públicos) precisam refletir isso, mesmo que os documentos internos de produto (Visão, Método, Bíblia 3D) continuem descrevendo o contexto real de uso.
+**Decisão:** remover toda menção à Fuctura e à Empresa Júnior dos Termos de Uso e Política de Privacidade. O responsável legal pelo tratamento de dados (seção 1 da Privacidade) passa a ser Caio de Matos Vital, pessoa física, marcado explicitamente como provisório até a operação ser formalizada como empresa.
+**Consequência:** documentos internos e documentos públicos agora contam a história em dois níveis diferentes de propósito — interno explica o "por quê" e o contexto real; público descreve só o produto em si. Isso precisa ser revisitado quando (e se) a Vessia virar uma empresa formal, principalmente a seção de responsável legal.
+
+---
+
+### 2026-07 — Bíblia 3D adota estrutura de 8 etapas, detalhadas só até o PRD
+**Contexto:** "Etapa" sempre foi um campo de texto livre no modelo (nunca um enum fechado), então ampliar de 6 para 8 etapas não exige mudança de schema. Mas etapas como Design e Desenvolvimento vieram com missões que presumem arquitetura técnica (Backend/Frontend/Banco) ainda não confirmada — nenhuma entrevista aconteceu.
+**Decisão:** adotar as 8 etapas (Descoberta, Planejamento do Produto, Design, Desenvolvimento, Testes, Homologação, Deploy, Encerramento) como estrutura do projeto. Detalhar missões de verdade só até a Etapa 2 (Planejamento do Produto) — que ainda é trabalho de documento, não presume tecnologia. Etapas 3 a 8 existem como nome/ordem/entrega esperada, sem missões, até o PRD ser aprovado.
+**Consequência:** mesma disciplina já usada desde o Bloco 11 — não inventar estrutura técnica antes de ter informação real pra sustentá-la.
+
+---
+
+### 2026-07 — Missão pode ter vagas ilimitadas
+**Contexto:** validação real com o Bíblia 3D — um professor precisou colocar um número arbitrário (20) só pra simular "sem limite", porque o campo `vagas` exigia um inteiro positivo.
+**Decisão:** `vagas` passa a aceitar nulo, com o significado explícito de "sem limite". A checagem de vaga disponível (`podeParticipar`) ignora o teto quando `vagas` é nulo. A interface mostra "X participando (sem limite)" em vez de "X de Y preenchidas" nesse caso.
+**Consequência:** pequena mudança de schema (coluna passa a aceitar null) e de lógica de validação — já existia a checagem, só precisa de um branch a mais para o caso nulo.
+
+---
+
+### 2026-07 — Busca de aluno/professor por e-mail, não só nome
+**Contexto:** validação real — nome sozinho é ambíguo e difícil de buscar com precisão; `profiles` não tinha e-mail replicado, só existia em `auth.users`.
+**Decisão:** adicionar `email` a `profiles` (sincronizado no cadastro), e a busca de atribuição de aluno/professor passa a considerar nome OU e-mail.
+**Consequência:** pequena duplicação de dado (e-mail já existe em `auth.users`) em troca de busca funcional sem precisar de service role toda vez que alguém for atribuído a um projeto.
+
+---
+
+### 2026-07 — URL amigável (slug) por projeto — reconsiderada, ainda adiada
+**Contexto:** essa ideia apareceu antes (sugestão do ChatGPT) e foi recusada por falta de caso de uso real. Agora existe um caso real: navegar por UUID é desconfortável na prática.
+**Decisão:** continua adiada — não porque o caso de uso deixou de ser real, mas porque é a mudança mais cara da lista (toca todas as rotas aninhadas de projeto: etapas, missões, alunos, professores, edição) para um ganho puramente estético, sem nenhuma função quebrada por causa disso. Os outros itens encontrados na mesma sessão de teste (404 pouco amigável, busca por e-mail, vagas sem limite, bug de navegação) têm impacto funcional real e custo menor — esses vêm primeiro.
+**Consequência:** revisitar quando o restante da lista estiver resolvido, não antes.
+
+---
+
 ### 2026-07 — Casos de Uso e Jornada do Usuário fundidos em um documento
 **Contexto:** os dois descreviam a mesma informação (fluxos do sistema) por ângulos diferentes (por ação vs. por papel), o que inflaria a documentação sem reduzir ambiguidade nova.
 **Decisão:** um único documento (`05 - Fluxos.md`) cobre casos de uso e jornada por papel.

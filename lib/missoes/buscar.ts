@@ -5,7 +5,7 @@ export type MissaoComStatus = {
   id: string;
   titulo: string;
   tipo: string;
-  vagas: number;
+  vagas: number | null;
   prazo: string | null;
   obrigatoria: boolean;
   concluida_em: string | null;

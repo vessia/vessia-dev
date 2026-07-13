@@ -27,6 +27,7 @@ async function criarUsuarioDeTeste(papel: "professor" | "aluno") {
   const { error: profileError } = await supabaseAdmin.from("profiles").insert({
     id: data.user.id,
     nome,
+    email,
     papel,
   });
 

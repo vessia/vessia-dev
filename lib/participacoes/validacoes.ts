@@ -24,6 +24,8 @@ export function precisaAceitarTermoEspecifico({
 // (a) se o termo específico do projeto (quando existir) já foi aceito,
 // (b) se o aluno ainda não participa dessa missão, (c) em missão disponível
 // ou em andamento (nunca bloqueada/concluída), e (d) se ainda houver vaga.
+// DECISIONS.md, "Missão pode ter vagas ilimitadas": vagas null = sem teto,
+// a checagem de vaga disponível é ignorada nesse caso.
 export function podeParticipar({
   statusMissao,
   vagas,
@@ -32,7 +34,7 @@ export function podeParticipar({
   termoPendente,
 }: {
   statusMissao: StatusMissao;
-  vagas: number;
+  vagas: number | null;
   participacoesExistentes: number;
   jaParticipa: boolean;
   termoPendente: boolean;
@@ -56,7 +58,7 @@ export function podeParticipar({
     };
   }
 
-  if (participacoesExistentes >= vagas) {
+  if (vagas !== null && participacoesExistentes >= vagas) {
     return {
       permitido: false,
       motivo: "Não há mais vagas disponíveis nesta missão.",

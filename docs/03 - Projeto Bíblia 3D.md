@@ -21,49 +21,29 @@ Quem será a pessoa entrevistada dentro da Fuctura (o "responsável" pelo Bíbli
 
 ---
 
-## 3. Etapa 0: Bem-vindo à Empresa Júnior
+## 3. Onboarding (nota histórica — não é mais uma Etapa deste projeto)
 
-Antes de qualquer missão do projeto em si, o aluno passa por uma trilha curta de ambientação. Ela não pertence ao Bíblia 3D especificamente — é a mesma para qualquer aluno entrando pela primeira vez na Empresa Júnior — mas é cadastrada aqui como parte deste primeiro projeto, já que ainda não existe outro lugar na plataforma para hospedá-la.
-
-### Missão 0.1 — Conheça a Empresa Júnior
-- **Tipo:** Estudar.
-- **Objetivo:** entender o que é a Empresa Júnior e por que ela existe.
-- **Entrega:** nenhuma entrega formal — leitura de um texto curto de boas-vindas.
-- **Critério de avaliação:** marcação de "concluído" pelo próprio aluno (sem aprovação do professor).
-- **Dependências:** nenhuma.
-- **Obrigatória:** sim.
-- **Vagas:** ilimitado (individual, todo aluno faz).
-
-### Missão 0.2 — Como funcionam as missões
-- **Tipo:** Estudar.
-- **Objetivo:** entender o conceito de missão, dependência, e o mapa de progresso.
-- **Entrega:** nenhuma entrega formal — leitura + checklist de auto-verificação.
-- **Critério de avaliação:** marcação de "concluído" pelo próprio aluno.
-- **Dependências:** Conheça a Empresa Júnior.
-- **Obrigatória:** sim.
-- **Vagas:** ilimitado.
-
-### Missão 0.3 — Como entregar e como funciona a aprovação
-- **Tipo:** Estudar.
-- **Objetivo:** entender o fluxo de entrega, aprovação, ressalvas e rejeição, e como pedir ajuda ao professor.
-- **Entrega:** nenhuma entrega formal — leitura + checklist de auto-verificação.
-- **Critério de avaliação:** marcação de "concluído" pelo próprio aluno.
-- **Dependências:** Como funcionam as missões.
-- **Obrigatória:** sim.
-- **Vagas:** ilimitado.
+Este documento originalmente descrevia o onboarding como uma "Etapa 0" dentro do próprio 
+projeto Bíblia 3D, com 3 missões. **Isso mudou na implementação (Bloco 10, ver 
+`DECISIONS.md`):** o onboarding virou um mecanismo global da plataforma (tabela própria 
+`onboarding_progresso`), aplicado a qualquer aluno antes de acessar qualquer projeto — 
+não pertence mais ao Bíblia 3D especificamente, e não deve ser recriado como Etapa aqui. 
+As 8 etapas do projeto (seção 5) começam direto em "1. Descoberta".
 
 ---
 
 ## 4. Etapa: Descoberta
 
-Estas são as missões do projeto propriamente dito, disponíveis depois que o aluno concluir a Etapa 0.
+Estas são as missões do projeto propriamente dito, disponíveis assim que o projeto for 
+publicado (o onboarding global já cuida de barrar quem ainda não passou por ele, antes 
+de chegar aqui — não é mais uma dependência dentro deste projeto).
 
 ### Missão 1 — Estudar modelo de entrevista
 - **Tipo:** Estudar.
 - **Objetivo:** conhecer o roteiro-base de entrevista antes de adaptá-lo ao Bíblia 3D.
-- **Entrega:** nenhuma entrega formal — leitura do `Roteiro Oficial de Entrevista - Empresa Júnior.md` + checklist de auto-verificação.
-- **Critério de avaliação:** marcação de "concluído" pelo próprio aluno.
-- **Dependências:** Como entregar e como funciona a aprovação (Etapa 0).
+- **Entrega:** breve resumo escrito (3 a 5 pontos) do que o roteiro oficial de entrevista ensina — prova de que a leitura foi feita e compreendida.
+- **Critério de avaliação:** o resumo demonstra compreensão real do roteiro (não é cópia literal do documento).
+- **Dependências:** nenhuma.
 - **Obrigatória:** sim.
 - **Vagas:** 1–2.
 
@@ -109,15 +89,92 @@ Estas são as missões do projeto propriamente dito, disponíveis depois que o a
 
 ---
 
-## 5. Etapas seguintes (PRD, Planejamento, Desenvolvimento, Testes, Entrega)
+## 5. Etapas do projeto (visão geral)
 
-Ainda não detalhadas. Segundo o método, elas nascem depois que a Descoberta terminar e o PRD do Bíblia 3D for escrito — não faz sentido definir "Criar Personas" ou missões de desenvolvimento antes de saber, por exemplo, se o painel do aluno será uma plataforma web própria, um aplicativo, ou outra coisa. Quando a etapa Descoberta estiver concluída e aprovada, este documento é atualizado com a etapa PRD.
+```
+1. Descoberta               — entender o problema antes de pensar na solução
+2. Planejamento do Produto  — transformar as informações em um plano
+3. Design                   — planejar como o sistema será construído
+4. Desenvolvimento          — construir o sistema
+5. Testes                   — garantir que tudo funciona
+6. Homologação               — confirmar que o cliente aprovou
+7. Deploy                   — publicar o sistema
+8. Encerramento              — finalizar o projeto e registrar o aprendizado
+```
+
+Só as Etapas 1 e 2 têm missões detalhadas agora. As Etapas 3 a 8 existem como estrutura 
+(nome, ordem, entrega esperada) mas suas missões só serão definidas depois que o PRD 
+(Etapa 2) estiver aprovado — definir "Backend", "Frontend" ou missões técnicas específicas 
+antes disso presumiria uma arquitetura que ainda não foi confirmada com o cliente.
 
 ---
 
-## 6. O que falta para publicar e apresentar aos alunos
+## 6. Etapa: Planejamento do Produto
+
+Disponível depois que a Etapa 1 (Descoberta) for concluída.
+
+### Missão 6 — Escrever objetivo do PRD
+- **Tipo:** Escrever.
+- **Objetivo:** declarar, em poucas frases, o que o painel do aluno precisa alcançar.
+- **Entrega:** parágrafo de objetivo do PRD, validado com o professor.
+- **Critério de avaliação:** o objetivo é específico o suficiente para orientar decisões 
+  de design e desenvolvimento futuras — não é genérico demais.
+- **Dependências:** Levantar dúvidas em aberto (Etapa 1).
+- **Obrigatória:** sim.
+- **Vagas:** 1.
+
+### Missão 7 — Listar funcionalidades do painel
+- **Tipo:** Escrever.
+- **Objetivo:** traduzir o que foi levantado na entrevista em uma lista concreta do que 
+  o painel do aluno vai ter.
+- **Entrega:** lista de funcionalidades, priorizadas (essencial / desejável / futuro).
+- **Critério de avaliação:** cada funcionalidade está associada a uma necessidade real 
+  identificada na entrevista, não a uma suposição.
+- **Dependências:** Escrever objetivo do PRD.
+- **Obrigatória:** sim.
+- **Vagas:** 1-2.
+
+### Missão 8 — Definir escopo e prioridades
+- **Tipo:** Revisar.
+- **Objetivo:** decidir o que entra na primeira versão do painel e o que fica para depois.
+- **Entrega:** documento de escopo, com prioridades claras entre as funcionalidades 
+  listadas.
+- **Critério de avaliação:** o escopo é realista para o tempo disponível do projeto; 
+  prioridades têm justificativa, não são arbitrárias.
+- **Dependências:** Listar funcionalidades do painel.
+- **Obrigatória:** sim.
+- **Vagas:** 1.
+
+### Missão 9 — PRD aprovado
+- **Tipo:** Apresentar.
+- **Objetivo:** consolidar objetivo, funcionalidades e escopo em um único documento e 
+  obter aprovação do professor antes de avançar para Design.
+- **Entrega:** PRD completo, aprovado.
+- **Critério de avaliação:** o professor confirma que o PRD está completo o suficiente 
+  para orientar a etapa de Design sem ambiguidade.
+- **Dependências:** Definir escopo e prioridades.
+- **Obrigatória:** sim.
+- **Vagas:** 1.
+
+---
+
+## 7. Etapas seguintes (Design, Desenvolvimento, Testes, Homologação, Deploy, Encerramento)
+
+Ainda não detalhadas. Segundo o método, elas nascem depois que o PRD (Etapa 2) for aprovado — não faz sentido definir missões de Design ou Desenvolvimento antes de saber, com o PRD em mãos, o que o painel do aluno precisa ser tecnicamente. Quando a Etapa 2 estiver concluída e aprovada, este documento é atualizado com as missões da Etapa 3 (Design).
+
+Entrega esperada de cada etapa, para referência (sem missões definidas ainda):
+- **Design:** projeto técnico (fluxos, wireframes, banco, arquitetura).
+- **Desenvolvimento:** sistema funcional.
+- **Testes:** versão pronta, validada.
+- **Homologação:** aceite do cliente (demonstração, feedback, ajustes finais).
+- **Deploy:** sistema online em produção.
+- **Encerramento:** projeto encerrado, com documentação e lições aprendidas registradas.
+
+---
+
+## 8. O que falta para publicar e apresentar aos alunos
 
 1. Você (ou quem for o Gestor no momento) define quem é o "responsável" a ser entrevistado.
-2. Cadastra o projeto Bíblia 3D na plataforma com a Etapa 0 (onboarding) e a etapa Descoberta, com as 5 missões do projeto.
+2. Cadastra o projeto Bíblia 3D na plataforma com a Etapa 1 (Descoberta, 5 missões) e a Etapa 2 (Planejamento do Produto, 4 missões) — as Etapas 3 a 8 podem ser criadas já com nome e ordem, mesmo sem missões ainda. Não recriar onboarding aqui — isso já é global.
 3. Define os prazos reais (hoje marcados como "a definir").
-4. Apresenta aos alunos: eles fazem login, se registram, completam a Etapa 0 e veem a Missão 1 do projeto disponível (as demais aparecem bloqueadas, com cadeado).
+4. Apresenta aos alunos: eles fazem login, se registram, completam o onboarding global (uma vez só, vale pra qualquer projeto) e veem a Missão 1 do Bíblia 3D disponível (as demais aparecem bloqueadas, com cadeado).

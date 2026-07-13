@@ -57,6 +57,7 @@ export async function cadastrar(formData: FormData) {
   const { error: profileError } = await admin.from("profiles").insert({
     id: data.user!.id,
     nome,
+    email,
     papel,
     termos_aceitos_em: new Date().toISOString(),
   });

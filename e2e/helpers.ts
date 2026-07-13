@@ -152,7 +152,7 @@ export async function criarEtapaDeTeste(
 export async function criarMissaoDeTeste(
   etapaId: string,
   titulo: string,
-  opcoes?: { prazo?: string },
+  opcoes?: { prazo?: string; vagas?: number | null },
 ) {
   const { data, error } = await supabaseAdmin
     .from("missoes")
@@ -164,6 +164,7 @@ export async function criarMissaoDeTeste(
       entrega_esperada: "Entrega de teste",
       criterio_avaliacao: "Critério de teste",
       prazo: opcoes?.prazo,
+      ...(opcoes?.vagas !== undefined ? { vagas: opcoes.vagas } : {}),
     })
     .select("id")
     .single();

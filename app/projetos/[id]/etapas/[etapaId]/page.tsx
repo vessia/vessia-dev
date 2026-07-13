@@ -132,8 +132,11 @@ export default async function EtapaDetalhePage({
                         )}
                       </p>
                       <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                        {tipo.label} · {missao.vagas} vaga
-                        {missao.vagas === 1 ? "" : "s"} ·{" "}
+                        {tipo.label} ·{" "}
+                        {missao.vagas === null
+                          ? "Vagas ilimitadas"
+                          : `${missao.vagas} vaga${missao.vagas === 1 ? "" : "s"}`}{" "}
+                        ·{" "}
                         {missao.prazo
                           ? new Date(missao.prazo).toLocaleDateString("pt-BR")
                           : "Sem prazo"}

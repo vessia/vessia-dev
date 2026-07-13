@@ -118,27 +118,36 @@ export async function buscarConvitesPendentes(
   }));
 }
 
-// Busca simples por nome, para os fluxos de "adicionar colaborador" /
-// "atribuir aluno" — profiles não guarda e-mail (fica só em auth.users, não
-// consultável pelo client normal), então a busca é por nome mesmo.
+// Busca por nome OU e-mail, para os fluxos de "adicionar colaborador" /
+// "atribuir aluno" (DECISIONS.md: "Busca de aluno/professor por e-mail, não
+// só nome" — nome sozinho é ambíguo). Duas queries separadas (em vez de
+// `.or()` com uma string montada na mão) pra não precisar escapar vírgula/
+// parênteses do termo digitado na sintaxe de filtro do PostgREST.
 export async function buscarUsuariosPorNome(
   supabase: SupabaseClient,
   papel: "professor" | "aluno",
   termo: string,
   excluirIds: string[] = [],
 ) {
-  let query = supabase
-    .from("profiles")
-    .select("id, nome")
-    .eq("papel", papel)
-    .ilike("nome", `%${termo}%`)
-    .order("nome")
-    .limit(10);
-
-  if (excluirIds.length > 0) {
-    query = query.not("id", "in", `(${excluirIds.join(",")})`);
+  function query() {
+    let q = supabase.from("profiles").select("id, nome, email").eq("papel", papel);
+    if (excluirIds.length > 0) {
+      q = q.not("id", "in", `(${excluirIds.join(",")})`);
+    }
+    return q;
   }
 
-  const { data } = await query;
-  return data ?? [];
+  const [porNome, porEmail] = await Promise.all([
+    query().ilike("nome", `%${termo}%`).order("nome").limit(10),
+    query().ilike("email", `%${termo}%`).order("nome").limit(10),
+  ]);
+
+  const porId = new Map<string, { id: string; nome: string; email: string }>();
+  for (const r of [...(porNome.data ?? []), ...(porEmail.data ?? [])]) {
+    porId.set(r.id, r);
+  }
+
+  return Array.from(porId.values())
+    .sort((a, b) => a.nome.localeCompare(b.nome))
+    .slice(0, 10);
 }

@@ -21,6 +21,7 @@ async function criarAlunoVirgemDeTeste() {
   const { error: profileError } = await supabaseAdmin.from("profiles").insert({
     id: data.user.id,
     nome: "Aluno Onboarding E2E",
+    email,
     papel: "aluno",
   });
 

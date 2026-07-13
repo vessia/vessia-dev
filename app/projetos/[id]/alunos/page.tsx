@@ -120,7 +120,7 @@ export default async function AlunosDoProjetoPage({
 
       <Card>
         <form method="get" className="flex flex-col gap-3">
-          <Field label="Buscar aluno por nome">
+          <Field label="Buscar aluno por nome ou e-mail">
             <input
               type="text"
               name="busca"
@@ -149,7 +149,10 @@ export default async function AlunosDoProjetoPage({
                   className="flex items-center justify-between gap-3 text-sm"
                 >
                   <span className="text-zinc-900 dark:text-zinc-50">
-                    {r.nome}
+                    {r.nome}{" "}
+                    <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                      {r.email}
+                    </span>
                   </span>
                   <form action={atribuirAluno}>
                     <input type="hidden" name="projeto_id" value={projetoId} />

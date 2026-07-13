@@ -158,14 +158,14 @@ export default async function EditarMissaoPage({
                 className={inputClass}
               />
             </Field>
-            <Field label="Vagas">
+            <Field label="Vagas (deixe em branco para sem limite)">
               <input
                 type="number"
                 name="vagas"
                 min={1}
                 step={1}
-                defaultValue={missao.vagas}
-                required
+                defaultValue={missao.vagas ?? ""}
+                placeholder="Sem limite"
                 className={inputClass}
               />
             </Field>

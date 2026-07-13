@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/app/_components/header";
 import { Footer } from "@/app/_components/footer";
 import { FeedbackWidgetGate } from "@/app/_components/feedback/gate";
+import { RefreshOnPopstate } from "@/app/_components/refresh-on-popstate";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,7 @@ export default function RootLayout({
         {children}
         <Footer />
         <FeedbackWidgetGate />
+        <RefreshOnPopstate />
       </body>
     </html>
   );

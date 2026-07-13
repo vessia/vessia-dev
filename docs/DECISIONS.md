@@ -204,7 +204,14 @@ Log de decisões de produto e engenharia, no formato Contexto / Decisão / Conse
 ### 2026-07 — Criação de novo Projeto temporariamente desativada por feature flag
 **Contexto:** hoje só existe um projeto real (Bíblia 3D), com mais de um professor vinculado. Sem um painel de admin ainda, Caio quer controlar manualmente quando novos projetos podem ser criados, para evitar que um colaborador crie um projeto separado por engano em vez de atuar dentro do Bíblia 3D.
 **Decisão:** feature flag (variável de ambiente, checada no servidor, não só escondendo o botão) desativa a ação de criar projeto para todo mundo, incluindo o proprietário — não é uma permissão por papel ou por usuário, é um interruptor geral e temporário.
-**Consequência:** reversível trocando a variável de ambiente, sem precisar de deploy de código novo. Não muda o modelo de permissões — colaboradores continuam com todas as permissões de professor (criar etapas/missões, avaliar) dentro dos projetos aos quais já estão vinculados, conforme já decidido. Isso deixa de ser necessário assim que existir um painel de admin (ver TECH-DEBT.md).
+**Consequência:** reversível trocando a variável de ambiente, sem precisar de deploy de código novo. Não muda o modelo de permissões — colaboradores continuam com todas as permissões de professor dentro dos projetos aos quais já estão vinculados, conforme já decidido. Isso deixa de ser necessário assim que existir um painel de admin (ver TECH-DEBT.md).
+
+---
+
+### 2026-07 — Widget de feedback guiado, dentro do app
+**Contexto:** com o Bíblia 3D prestes a rodar com usuários reais, vale coletar sinal estruturado de uso em vez de esperar reclamação informal por fora da plataforma.
+**Decisão:** botão de feedback visível em qualquer página autenticada (não na landing pública), abrindo um formulário curto e guiado — não um campo de texto livre solto. Três perguntas fixas: (1) avaliação rápida (escala 1-5) de como está a experiência até agora; (2) múltipla escolha do que mais incomoda (opções pré-definidas, ex: "não sei o que fazer", "muito clique pra pouca coisa", "tela confusa", "está bom"); (3) campo de texto livre opcional, só pra quem quiser detalhar. Guarda também a página de origem do envio.
+**Consequência:** nova entidade simples (Feedback), sem tela de administração para visualizar ainda — leitura direto pela tabela no Supabase por enquanto, já que só existe um professor consultando isso. Construir uma tela de visualização só se o volume justificar.
 
 ---
 

@@ -28,7 +28,7 @@ export default async function OnboardingPage({
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 p-4 sm:p-8">
       <div>
         <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
-          Bem-vindo à Empresa Júnior
+          Bem-vindo à Vessia
         </h1>
         <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
           Antes de ver os projetos, dá uma olhada rápida em como tudo

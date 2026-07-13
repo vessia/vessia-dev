@@ -250,6 +250,13 @@ Log de decisões de produto e engenharia, no formato Contexto / Decisão / Conse
 
 ---
 
+### 2026-07 — Onboarding global neutralizado, sem menção à Empresa Júnior
+**Contexto:** o onboarding é genérico por arquitetura (mesmo conteúdo pra qualquer aluno, de qualquer projeto — decisão do Bloco 10), mas seu título e o nome do primeiro item ainda diziam "Empresa Júnior", ficando pra trás da decisão de neutralizar a marca da plataforma nos documentos e telas que não são específicas de um projeto.
+**Decisão:** título passa de "Bem-vindo à Empresa Júnior" para "Bem-vindo à Vessia"; item 1 passa de "Conheça a Empresa Júnior" para "Conheça a Vessia". O parágrafo de conteúdo do item 1 não muda — já era neutro.
+**Consequência:** consistência entre landing, Termos e onboarding — nenhuma tela de identidade geral da plataforma menciona Fuctura ou Empresa Júnior. Menções continuam normais dentro de contexto de projeto específico (ex: campo "cliente" do Bíblia 3D).
+
+---
+
 ### 2026-07 — Casos de Uso e Jornada do Usuário fundidos em um documento
 **Contexto:** os dois descreviam a mesma informação (fluxos do sistema) por ângulos diferentes (por ação vs. por papel), o que inflaria a documentação sem reduzir ambiguidade nova.
 **Decisão:** um único documento (`05 - Fluxos.md`) cobre casos de uso e jornada por papel.

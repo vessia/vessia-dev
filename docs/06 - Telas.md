@@ -48,9 +48,9 @@ Cada tela abaixo tem: objetivo, informações exibidas, ações possíveis, cond
 
 ```
 ┌────────────────────────────┐
-│  Bem-vindo à Empresa Júnior │
+│  Bem-vindo à Vessia          │
 │                              │
-│  ✅ Conheça a Empresa Júnior│
+│  ✅ Conheça a Vessia         │
 │  🟢 Como funcionam as missões [marcar]│
 │  🔒 Como funciona a aprovação│
 │                              │

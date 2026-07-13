@@ -55,7 +55,7 @@ test("aluno novo é redirecionado pro onboarding antes de ver /projetos, e compl
 
     await page.goto("/onboarding");
 
-    await expect(page.getByText("Conheça a Empresa Júnior")).toBeVisible();
+    await expect(page.getByText("Conheça a Vessia")).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Marcar como concluído" }),
     ).toHaveCount(1);
@@ -108,7 +108,7 @@ test("aluno que já completou o onboarding revisita em modo leitura via 'Rever o
   await page.getByRole("link", { name: "Rever onboarding" }).click();
   await page.waitForURL("**/onboarding");
 
-  await expect(page.getByText("Conheça a Empresa Júnior")).toBeVisible();
+  await expect(page.getByText("Conheça a Vessia")).toBeVisible();
   await expect(page.getByText("Como funcionam as missões")).toBeVisible();
   await expect(
     page.getByText("Como entregar e como funciona a aprovação"),

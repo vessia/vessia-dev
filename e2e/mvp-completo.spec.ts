@@ -234,7 +234,7 @@ test("MVP completo: professor monta o Bíblia 3D real, aluno percorre a Missão 
     // qualquer projeto, sem precisar de nenhuma explicação externa.
     await page.waitForURL("**/onboarding");
     await expect(
-      page.getByRole("heading", { name: "Bem-vindo à Empresa Júnior" }),
+      page.getByRole("heading", { name: "Bem-vindo à Vessia" }),
     ).toBeVisible();
 
     for (let i = 0; i < 3; i++) {

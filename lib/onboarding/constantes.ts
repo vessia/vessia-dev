@@ -3,7 +3,7 @@
 export const ITENS_ONBOARDING = [
   {
     chave: "conheca_empresa",
-    titulo: "Conheça a Empresa Júnior",
+    titulo: "Conheça a Vessia",
     texto:
       "A Vessia não é um gerenciador de tarefas — é um ambiente de aprendizagem baseado em projetos reais para clientes reais. Aqui você não fica esperando alguém te dizer o que fazer: a plataforma sempre mostra, com clareza, o que já pode ser feito agora. E o professor não precisa carregar na cabeça o estado de cada aluno — ele acompanha tudo por aqui também.",
   },

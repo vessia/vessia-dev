@@ -46,7 +46,7 @@ async function cadastrarELogarAluno(page: import("@playwright/test").Page) {
   // dashboard "Olá, {nome}".
   await page.waitForURL("**/onboarding");
   await expect(
-    page.getByRole("heading", { name: "Bem-vindo à Empresa Júnior" }),
+    page.getByRole("heading", { name: "Bem-vindo à Vessia" }),
   ).toBeVisible();
 
   return { email, nome };

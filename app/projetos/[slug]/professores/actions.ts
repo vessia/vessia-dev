@@ -3,18 +3,20 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireProprietarioDoProjeto } from "@/lib/projetos/dal";
+import { buscarSlugPorId } from "@/lib/slugs/buscar";
 
 export async function adicionarColaborador(formData: FormData) {
   const projetoId = String(formData.get("projeto_id") ?? "");
   const professorId = String(formData.get("professor_id") ?? "");
   const user = await requireProprietarioDoProjeto(projetoId);
-  const destino = `/projetos/${projetoId}/professores`;
+  const supabase = await createClient();
+  const projetoSlug = await buscarSlugPorId(supabase, "projetos", projetoId);
+  const destino = `/projetos/${projetoSlug}/professores`;
 
   if (!professorId) {
     redirect(`${destino}?error=${encodeURIComponent("Selecione um professor.")}`);
   }
 
-  const supabase = await createClient();
   const { error } = await supabase.from("projeto_professores").insert({
     projeto_id: projetoId,
     professor_id: professorId,
@@ -36,10 +38,10 @@ export async function adicionarColaborador(formData: FormData) {
 export async function removerProfessor(formData: FormData) {
   const projetoId = String(formData.get("projeto_id") ?? "");
   await requireProprietarioDoProjeto(projetoId);
-  const destino = `/projetos/${projetoId}/professores`;
-  const professorId = String(formData.get("professor_id") ?? "");
-
   const supabase = await createClient();
+  const projetoSlug = await buscarSlugPorId(supabase, "projetos", projetoId);
+  const destino = `/projetos/${projetoSlug}/professores`;
+  const professorId = String(formData.get("professor_id") ?? "");
 
   const { data: alvo } = await supabase
     .from("projeto_professores")

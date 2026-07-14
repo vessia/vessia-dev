@@ -10,9 +10,22 @@ import {
   precisaAceitarTermoEspecifico,
 } from "@/lib/participacoes/validacoes";
 import { validarArquivoEntrega } from "@/lib/entregas/validacao-arquivo";
+import { buscarSlugPorId } from "@/lib/slugs/buscar";
 
-function caminhoMissao(projetoId: string, etapaId: string, missaoId: string) {
-  return `/projetos/${projetoId}/etapas/${etapaId}/missoes/${missaoId}`;
+type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+
+async function caminhoMissao(
+  supabase: SupabaseServerClient,
+  projetoId: string,
+  etapaId: string,
+  missaoId: string,
+) {
+  const [projetoSlug, etapaSlug, missaoSlug] = await Promise.all([
+    buscarSlugPorId(supabase, "projetos", projetoId),
+    buscarSlugPorId(supabase, "etapas", etapaId),
+    buscarSlugPorId(supabase, "missoes", missaoId),
+  ]);
+  return `/projetos/${projetoSlug}/etapas/${etapaSlug}/missoes/${missaoSlug}`;
 }
 
 export async function participar(formData: FormData) {
@@ -21,9 +34,8 @@ export async function participar(formData: FormData) {
   const projetoId = String(formData.get("projeto_id") ?? "");
   const etapaId = String(formData.get("etapa_id") ?? "");
   const missaoId = String(formData.get("missao_id") ?? "");
-  const destino = caminhoMissao(projetoId, etapaId, missaoId);
-
   const supabase = await createClient();
+  const destino = await caminhoMissao(supabase, projetoId, etapaId, missaoId);
 
   const { data: missao } = await supabase
     .from("missoes")
@@ -109,9 +121,8 @@ export async function aceitarTermoProjeto(formData: FormData) {
   const projetoId = String(formData.get("projeto_id") ?? "");
   const etapaId = String(formData.get("etapa_id") ?? "");
   const missaoId = String(formData.get("missao_id") ?? "");
-  const destino = caminhoMissao(projetoId, etapaId, missaoId);
-
   const supabase = await createClient();
+  const destino = await caminhoMissao(supabase, projetoId, etapaId, missaoId);
 
   // Aceite é por projeto, não por missão (DECISIONS.md) — grava direto em
   // projeto_alunos, sem precisar saber qual missão trouxe o aluno até aqui.
@@ -134,9 +145,8 @@ export async function marcarConcluida(formData: FormData) {
   const projetoId = String(formData.get("projeto_id") ?? "");
   const etapaId = String(formData.get("etapa_id") ?? "");
   const missaoId = String(formData.get("missao_id") ?? "");
-  const destino = caminhoMissao(projetoId, etapaId, missaoId);
-
   const supabase = await createClient();
+  const destino = await caminhoMissao(supabase, projetoId, etapaId, missaoId);
 
   // DECISIONS.md: conclusão de missão é sempre manual, decisão pedagógica
   // do professor — não depende de nenhuma Participação específica estar
@@ -161,7 +171,8 @@ export async function enviarEntrega(formData: FormData) {
   const missaoId = String(formData.get("missao_id") ?? "");
   const participacaoId = String(formData.get("participacao_id") ?? "");
   const tipoConteudo = String(formData.get("tipo_conteudo") ?? "");
-  const destino = caminhoMissao(projetoId, etapaId, missaoId);
+  const supabase = await createClient();
+  const destino = await caminhoMissao(supabase, projetoId, etapaId, missaoId);
 
   if (
     tipoConteudo !== "texto" &&
@@ -196,8 +207,6 @@ export async function enviarEntrega(formData: FormData) {
       redirect(`${destino}?error=${encodeURIComponent("Preencha o conteúdo da entrega.")}`);
     }
   }
-
-  const supabase = await createClient();
 
   const { data: participacao } = await supabase
     .from("participacoes")

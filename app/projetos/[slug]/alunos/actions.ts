@@ -4,18 +4,19 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireAluno } from "@/lib/auth/dal";
 import { requireProfessorDoProjeto } from "@/lib/projetos/dal";
+import { buscarSlugPorId } from "@/lib/slugs/buscar";
 
 export async function atribuirAluno(formData: FormData) {
   const projetoId = String(formData.get("projeto_id") ?? "");
   const alunoId = String(formData.get("aluno_id") ?? "");
   const user = await requireProfessorDoProjeto(projetoId);
-  const destino = `/projetos/${projetoId}/alunos`;
+  const supabase = await createClient();
+  const projetoSlug = await buscarSlugPorId(supabase, "projetos", projetoId);
+  const destino = `/projetos/${projetoSlug}/alunos`;
 
   if (!alunoId) {
     redirect(`${destino}?error=${encodeURIComponent("Selecione um aluno.")}`);
   }
-
-  const supabase = await createClient();
 
   const { data: atual } = await supabase
     .from("projeto_alunos")
@@ -76,10 +77,10 @@ export async function atribuirAluno(formData: FormData) {
 export async function removerAluno(formData: FormData) {
   const projetoId = String(formData.get("projeto_id") ?? "");
   await requireProfessorDoProjeto(projetoId);
-  const destino = `/projetos/${projetoId}/alunos`;
-  const alunoId = String(formData.get("aluno_id") ?? "");
-
   const supabase = await createClient();
+  const projetoSlug = await buscarSlugPorId(supabase, "projetos", projetoId);
+  const destino = `/projetos/${projetoSlug}/alunos`;
+  const alunoId = String(formData.get("aluno_id") ?? "");
 
   const { data: atual } = await supabase
     .from("projeto_alunos")
@@ -114,9 +115,9 @@ export async function removerAluno(formData: FormData) {
 export async function sairDoProjeto(formData: FormData) {
   const user = await requireAluno();
   const projetoId = String(formData.get("projeto_id") ?? "");
-  const destino = `/projetos/${projetoId}`;
-
   const supabase = await createClient();
+  const projetoSlug = await buscarSlugPorId(supabase, "projetos", projetoId);
+  const destino = `/projetos/${projetoSlug}`;
 
   const { data: atual } = await supabase
     .from("projeto_alunos")

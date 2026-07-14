@@ -10,8 +10,11 @@ export type PendenciaAvaliacao = {
 
 export type MissaoAtrasada = {
   missaoId: string;
+  missaoSlug: string;
   etapaId: string;
+  etapaSlug: string;
   projetoId: string;
+  projetoSlug: string;
   titulo: string;
   prazo: string;
   projetoNome: string;
@@ -24,29 +27,40 @@ export type MissaoAtrasada = {
 async function buscarMissoesDoProfessor(supabase: SupabaseClient) {
   const { data: projetos } = await supabase
     .from("projetos")
-    .select("id, nome")
+    .select("id, nome, slug")
     .eq("status", "ativo");
 
   const listaProjetos = projetos ?? [];
   const projetoIds = listaProjetos.map((p) => p.id);
   const nomePorProjeto = new Map(listaProjetos.map((p) => [p.id, p.nome]));
+  const slugPorProjeto = new Map(listaProjetos.map((p) => [p.id, p.slug]));
 
   const { data: etapas } = projetoIds.length
-    ? await supabase.from("etapas").select("id, projeto_id").in("projeto_id", projetoIds)
+    ? await supabase
+        .from("etapas")
+        .select("id, projeto_id, slug")
+        .in("projeto_id", projetoIds)
     : { data: [] };
 
   const listaEtapas = etapas ?? [];
   const etapaIds = listaEtapas.map((e) => e.id);
   const projetoPorEtapa = new Map(listaEtapas.map((e) => [e.id, e.projeto_id]));
+  const slugPorEtapa = new Map(listaEtapas.map((e) => [e.id, e.slug]));
 
   const { data: missoes } = etapaIds.length
     ? await supabase
         .from("missoes")
-        .select("id, titulo, prazo, concluida_em, etapa_id")
+        .select("id, titulo, prazo, concluida_em, etapa_id, slug")
         .in("etapa_id", etapaIds)
     : { data: [] };
 
-  return { missoes: missoes ?? [], projetoPorEtapa, nomePorProjeto };
+  return {
+    missoes: missoes ?? [],
+    projetoPorEtapa,
+    nomePorProjeto,
+    slugPorProjeto,
+    slugPorEtapa,
+  };
 }
 
 // Dashboard do professor (Bloco 9, tarefa 26): entregas pendentes de
@@ -127,7 +141,7 @@ export async function buscarPendenciasAvaliacao(
 export async function buscarMissoesAtrasadas(
   supabase: SupabaseClient,
 ): Promise<MissaoAtrasada[]> {
-  const { missoes, projetoPorEtapa, nomePorProjeto } =
+  const { missoes, projetoPorEtapa, nomePorProjeto, slugPorProjeto, slugPorEtapa } =
     await buscarMissoesDoProfessor(supabase);
 
   const agora = new Date().toISOString();
@@ -177,12 +191,18 @@ export async function buscarMissoesAtrasadas(
 
   return candidatas
     .filter((m) => !missoesComEntregaAprovada.has(m.id))
-    .map((m) => ({
-      missaoId: m.id,
-      etapaId: m.etapa_id,
-      projetoId: projetoPorEtapa.get(m.etapa_id) ?? "",
-      titulo: m.titulo,
-      prazo: m.prazo as string,
-      projetoNome: nomePorProjeto.get(projetoPorEtapa.get(m.etapa_id) ?? "") ?? "",
-    }));
+    .map((m) => {
+      const projetoId = projetoPorEtapa.get(m.etapa_id) ?? "";
+      return {
+        missaoId: m.id,
+        missaoSlug: m.slug,
+        etapaId: m.etapa_id,
+        etapaSlug: slugPorEtapa.get(m.etapa_id) ?? "",
+        projetoId,
+        projetoSlug: slugPorProjeto.get(projetoId) ?? "",
+        titulo: m.titulo,
+        prazo: m.prazo as string,
+        projetoNome: nomePorProjeto.get(projetoId) ?? "",
+      };
+    });
 }

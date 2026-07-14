@@ -49,26 +49,26 @@ test("lista da etapa mostra a missão como concluída depois de marcar e voltar 
   );
   test.setTimeout(60_000);
   const { professor } = lerUsuariosDeTeste();
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Voltar Concluir E2E ${Date.now()}`,
   );
-  const etapaId = await criarEtapaDeTeste(projetoId, "Descoberta", 1);
-  const missaoId = await criarMissaoDeTeste(etapaId, "Missão Voltar Concluir E2E");
+  const etapa = await criarEtapaDeTeste(projeto.id, "Descoberta", 1);
+  const missao = await criarMissaoDeTeste(etapa.id, "Missão Voltar Concluir E2E");
 
   await loginViaUI(page, professor);
 
-  await page.goto(`/projetos/${projetoId}/etapas/${etapaId}`);
+  await page.goto(`/projetos/${projeto.slug}/etapas/${etapa.slug}`);
   await expect(page.getByText("Missão Voltar Concluir E2E")).toBeVisible();
 
   await page.goto(
-    `/projetos/${projetoId}/etapas/${etapaId}/missoes/${missaoId}`,
+    `/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missao.slug}`,
   );
   await page.getByRole("button", { name: "Marcar missão como concluída" }).click();
   await expect(page.getByText(/✅ Concluída em/)).toBeVisible();
 
   await page.goBack();
-  await expect(page).toHaveURL(`/projetos/${projetoId}/etapas/${etapaId}`);
+  await expect(page).toHaveURL(`/projetos/${projeto.slug}/etapas/${etapa.slug}`);
 
   const linhaMissao = page.locator("li", {
     hasText: "Missão Voltar Concluir E2E",

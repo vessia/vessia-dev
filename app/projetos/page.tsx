@@ -51,7 +51,7 @@ export default async function ProjetosPage({
   // histórico, ver 05 - Fluxos.md §2.1).
   const { data: projetos } = await supabase
     .from("projetos")
-    .select("id, nome, cliente, status")
+    .select("id, slug, nome, cliente, status")
     .order("criado_em", { ascending: false });
 
   const lista = projetos ?? [];
@@ -125,7 +125,7 @@ export default async function ProjetosPage({
               >
                 <div className="flex items-start justify-between gap-2">
                   <Link
-                    href={`/projetos/${projeto.id}`}
+                    href={`/projetos/${projeto.slug}`}
                     className="font-medium text-zinc-900 hover:underline dark:text-zinc-50"
                   >
                     {projeto.nome}
@@ -152,7 +152,7 @@ export default async function ProjetosPage({
                 {ehProfessor && (
                   <div className="mt-1 flex items-center gap-4 border-t border-zinc-100 pt-3 text-sm dark:border-zinc-800">
                     <Link
-                      href={`/projetos/${projeto.id}/editar`}
+                      href={`/projetos/${projeto.slug}/editar`}
                       className="text-blue-600 underline dark:text-blue-400"
                     >
                       Editar

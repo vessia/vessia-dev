@@ -3,6 +3,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfessor } from "@/lib/auth/dal";
+import { gerarSlugUnico } from "@/lib/slugs/unico";
+import { buscarSlugPorId } from "@/lib/slugs/buscar";
 
 function mensagemDeErro(error: { code?: string; message: string }) {
   // 23505 = unique_violation — no schema, unique(projeto_id, ordem).
@@ -19,30 +21,39 @@ export async function criarEtapa(formData: FormData) {
   const ordemRaw = String(formData.get("ordem") ?? "");
   const ordem = Number(ordemRaw);
 
+  const supabase = await createClient();
+  const projetoSlug = await buscarSlugPorId(supabase, "projetos", projetoId);
+
   if (!nome || !ordemRaw || Number.isNaN(ordem)) {
     redirect(
-      `/projetos/${projetoId}/etapas/nova?error=${encodeURIComponent(
+      `/projetos/${projetoSlug}/etapas/nova?error=${encodeURIComponent(
         "Preencha nome e ordem.",
       )}`,
     );
   }
 
-  const supabase = await createClient();
+  const slug = await gerarSlugUnico(
+    "etapas",
+    { projeto_id: projetoId },
+    nome,
+  );
+
   const { error } = await supabase.from("etapas").insert({
     projeto_id: projetoId,
     nome,
     ordem,
+    slug,
   });
 
   if (error) {
     redirect(
-      `/projetos/${projetoId}/etapas/nova?error=${encodeURIComponent(
+      `/projetos/${projetoSlug}/etapas/nova?error=${encodeURIComponent(
         mensagemDeErro(error),
       )}`,
     );
   }
 
-  redirect(`/projetos/${projetoId}`);
+  redirect(`/projetos/${projetoSlug}`);
 }
 
 export async function atualizarEtapa(formData: FormData) {
@@ -54,27 +65,31 @@ export async function atualizarEtapa(formData: FormData) {
   const ordemRaw = String(formData.get("ordem") ?? "");
   const ordem = Number(ordemRaw);
 
+  const supabase = await createClient();
+  const projetoSlug = await buscarSlugPorId(supabase, "projetos", projetoId);
+
   if (!nome || !ordemRaw || Number.isNaN(ordem)) {
+    const etapaSlug = await buscarSlugPorId(supabase, "etapas", etapaId);
     redirect(
-      `/projetos/${projetoId}/etapas/${etapaId}/editar?error=${encodeURIComponent(
+      `/projetos/${projetoSlug}/etapas/${etapaSlug}/editar?error=${encodeURIComponent(
         "Preencha nome e ordem.",
       )}`,
     );
   }
 
-  const supabase = await createClient();
   const { error } = await supabase
     .from("etapas")
     .update({ nome, ordem })
     .eq("id", etapaId);
 
   if (error) {
+    const etapaSlug = await buscarSlugPorId(supabase, "etapas", etapaId);
     redirect(
-      `/projetos/${projetoId}/etapas/${etapaId}/editar?error=${encodeURIComponent(
+      `/projetos/${projetoSlug}/etapas/${etapaSlug}/editar?error=${encodeURIComponent(
         mensagemDeErro(error),
       )}`,
     );
   }
 
-  redirect(`/projetos/${projetoId}`);
+  redirect(`/projetos/${projetoSlug}`);
 }

@@ -144,7 +144,7 @@ export default async function DashboardPage({
                 className="rounded-lg border border-zinc-200 bg-white p-3 text-sm dark:border-zinc-800 dark:bg-zinc-950"
               >
                 <Link
-                  href={`/projetos/${m.projetoId}/etapas/${m.etapaId}/missoes/${m.missaoId}`}
+                  href={`/projetos/${m.projetoSlug}/etapas/${m.etapaSlug}/missoes/${m.missaoSlug}`}
                   className="text-blue-600 underline dark:text-blue-400"
                 >
                   {m.titulo}

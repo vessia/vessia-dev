@@ -37,7 +37,7 @@ async function criarUsuarioMvpDeTeste(
   return { id: data.user.id, email, password: SENHA, nome, papel };
 }
 
-async function buscarIdPorNome(
+async function buscarPorNome(
   tabela: "projetos" | "etapas" | "missoes",
   coluna: string,
   valor: string,
@@ -46,7 +46,7 @@ async function buscarIdPorNome(
 ) {
   const { data, error } = await supabaseAdmin
     .from(tabela)
-    .select("id")
+    .select("id, slug")
     .eq(coluna, valor)
     .eq(nomeColuna, nome)
     .single();
@@ -57,7 +57,7 @@ async function buscarIdPorNome(
     );
   }
 
-  return data.id as string;
+  return { id: data.id as string, slug: data.slug as string };
 }
 
 type MissaoDoc = {
@@ -144,7 +144,7 @@ test("MVP completo: professor monta o Bíblia 3D real, aluno percorre a Missão 
   const professor = await criarUsuarioMvpDeTeste("professor", "Professor Bíblia 3D E2E");
   const aluno = await criarUsuarioMvpDeTeste("aluno", "Aluno Bíblia 3D E2E");
 
-  let projetoId = "";
+  let projeto: { id: string; slug: string } | null = null;
 
   try {
     // ---- Passo 2: professor monta o projeto real, via UI -------------
@@ -159,7 +159,7 @@ test("MVP completo: professor monta o Bíblia 3D real, aluno percorre a Missão 
     await page.getByRole("button", { name: "Salvar" }).click();
     await page.waitForURL("**/projetos");
 
-    projetoId = await buscarIdPorNome(
+    projeto = await buscarPorNome(
       "projetos",
       "criado_por",
       professor.id,
@@ -167,24 +167,24 @@ test("MVP completo: professor monta o Bíblia 3D real, aluno percorre a Missão 
       "Bíblia 3D",
     );
 
-    await page.goto(`/projetos/${projetoId}/etapas/nova`);
+    await page.goto(`/projetos/${projeto.slug}/etapas/nova`);
     await page.getByLabel("Nome").fill("Descoberta");
     await page.getByLabel("Ordem").fill("1");
     await page.getByRole("button", { name: "Salvar" }).click();
-    await page.waitForURL(`**/projetos/${projetoId}`);
+    await page.waitForURL(`**/projetos/${projeto.slug}`);
 
-    const etapaId = await buscarIdPorNome(
+    const etapa = await buscarPorNome(
       "etapas",
       "projeto_id",
-      projetoId,
+      projeto.id,
       "nome",
       "Descoberta",
     );
 
-    const idsPorTitulo = new Map<string, string>();
+    const missoesPorTitulo = new Map<string, { id: string; slug: string }>();
 
     for (const missao of MISSOES_DESCOBERTA) {
-      await page.goto(`/projetos/${projetoId}/etapas/${etapaId}/missoes/nova`);
+      await page.goto(`/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/nova`);
       await page.getByLabel("Título").fill(missao.titulo);
       await page.getByLabel("Tipo").selectOption(missao.tipo);
       await page.getByLabel("Objetivo").fill(missao.objetivo);
@@ -193,25 +193,25 @@ test("MVP completo: professor monta o Bíblia 3D real, aluno percorre a Missão 
       await page.getByLabel("Vagas").fill(missao.vagas);
 
       if (missao.dependeDe) {
-        const idDependencia = idsPorTitulo.get(missao.dependeDe)!;
-        await page.getByTestId(`dependencia-${idDependencia}`).check();
+        const dependencia = missoesPorTitulo.get(missao.dependeDe)!;
+        await page.getByTestId(`dependencia-${dependencia.id}`).check();
       }
 
       await page.getByRole("button", { name: "Salvar" }).click();
-      await page.waitForURL(`**/projetos/${projetoId}/etapas/${etapaId}`);
+      await page.waitForURL(`**/projetos/${projeto.slug}/etapas/${etapa.slug}`);
 
-      const id = await buscarIdPorNome(
+      const registro = await buscarPorNome(
         "missoes",
         "etapa_id",
-        etapaId,
+        etapa.id,
         "titulo",
         missao.titulo,
       );
-      idsPorTitulo.set(missao.titulo, id);
+      missoesPorTitulo.set(missao.titulo, registro);
     }
 
-    const missao1Id = idsPorTitulo.get("Estudar modelo de entrevista")!;
-    const missao2Id = idsPorTitulo.get(
+    const missao1 = missoesPorTitulo.get("Estudar modelo de entrevista")!;
+    const missao2 = missoesPorTitulo.get(
       "Montar roteiro de entrevista do Bíblia 3D",
     )!;
 
@@ -219,7 +219,7 @@ test("MVP completo: professor monta o Bíblia 3D real, aluno percorre a Missão 
     // Desde a migration 006, participar de um projeto exige uma linha
     // 'aceita' em projeto_alunos — o professor precisa atribuir o aluno
     // antes dele conseguir ver qualquer etapa/missão (05 - Fluxos.md §2.1).
-    await page.goto(`/projetos/${projetoId}/alunos`);
+    await page.goto(`/projetos/${projeto.slug}/alunos`);
     await page.getByLabel("Buscar aluno por nome").fill(aluno.nome);
     await page.getByRole("button", { name: "Buscar" }).click();
     await page.getByRole("listitem").filter({ hasText: aluno.nome }).getByRole("button", { name: "Atribuir" }).click();
@@ -259,7 +259,7 @@ test("MVP completo: professor monta o Bíblia 3D real, aluno percorre a Missão 
 
     await page.goto("/projetos");
     await page.getByRole("link", { name: "Bíblia 3D" }).click();
-    await page.waitForURL(`**/projetos/${projetoId}`);
+    await page.waitForURL(`**/projetos/${projeto.slug}`);
 
     // Só a Missão 1 é um link (disponível); as outras 4 aparecem como
     // texto simples (bloqueadas), sem nenhuma explicação de terceiros.
@@ -275,7 +275,7 @@ test("MVP completo: professor monta o Bíblia 3D real, aluno percorre a Missão 
 
     // ---- Passo 5: aluno participa da Missão 1 e entrega ---------------
     await page.getByRole("link", { name: /Estudar modelo de entrevista/ }).click();
-    await page.waitForURL(`**/missoes/${missao1Id}`);
+    await page.waitForURL(`**/missoes/${missao1.slug}`);
 
     await expect(
       page.getByText(
@@ -287,7 +287,7 @@ test("MVP completo: professor monta o Bíblia 3D real, aluno percorre a Missão 
     ).toBeVisible();
 
     await page.getByRole("button", { name: "Participar" }).click();
-    await page.waitForURL(`**/missoes/${missao1Id}`);
+    await page.waitForURL(`**/missoes/${missao1.slug}`);
 
     await page
       .getByPlaceholder("Descreva o que você produziu, ou cole o link aqui...")
@@ -295,7 +295,7 @@ test("MVP completo: professor monta o Bíblia 3D real, aluno percorre a Missão 
         "Li o Roteiro Oficial de Entrevista - Empresa Júnior.md na íntegra e completei o checklist de auto-verificação.",
       );
     await page.getByRole("button", { name: "Enviar" }).click();
-    await page.waitForURL(`**/missoes/${missao1Id}`);
+    await page.waitForURL(`**/missoes/${missao1.slug}`);
     await expect(
       page.getByText("Entrega enviada — aguardando avaliação do professor."),
     ).toBeVisible();
@@ -330,7 +330,7 @@ test("MVP completo: professor monta o Bíblia 3D real, aluno percorre a Missão 
     // a Missão 1 fica "em_andamento" pra sempre e a Missão 2 nunca
     // desbloqueia — mesmo com a única entrega já aprovada.
     await page.goto(
-      `/projetos/${projetoId}/etapas/${etapaId}/missoes/${missao1Id}`,
+      `/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missao1.slug}`,
     );
     await page
       .getByRole("button", { name: "Marcar missão como concluída" })
@@ -341,13 +341,13 @@ test("MVP completo: professor monta o Bíblia 3D real, aluno percorre a Missão 
     await loginViaUI(page, aluno);
 
     await page.goto(
-      `/projetos/${projetoId}/etapas/${etapaId}/missoes/${missao1Id}`,
+      `/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missao1.slug}`,
     );
     await expect(page.getByTestId("missao-status-badge")).toContainText(
       "Concluída",
     );
 
-    await page.goto(`/projetos/${projetoId}`);
+    await page.goto(`/projetos/${projeto.slug}`);
     await expect(
       page.getByRole("link", {
         name: /Montar roteiro de entrevista do Bíblia 3D/,
@@ -355,15 +355,15 @@ test("MVP completo: professor monta o Bíblia 3D real, aluno percorre a Missão 
     ).toBeVisible();
 
     await page.goto(
-      `/projetos/${projetoId}/etapas/${etapaId}/missoes/${missao2Id}`,
+      `/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missao2.slug}`,
     );
     await expect(page.getByTestId("missao-status-badge")).toContainText(
       "Disponível",
     );
   } finally {
     // ---- Passo 8: cleanup completo — nada deve sobrar no banco ---------
-    if (projetoId) {
-      await supabaseAdmin.from("projetos").delete().eq("id", projetoId);
+    if (projeto) {
+      await supabaseAdmin.from("projetos").delete().eq("id", projeto.id);
     }
     await supabaseAdmin.auth.admin.deleteUser(professor.id);
     await supabaseAdmin.auth.admin.deleteUser(aluno.id);

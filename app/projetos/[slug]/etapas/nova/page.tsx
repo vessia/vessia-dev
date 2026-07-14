@@ -10,18 +10,18 @@ export default async function NovaEtapaPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
   await requireProfessor();
-  const { id } = await params;
+  const { slug } = await params;
   const { error } = await searchParams;
 
   const supabase = await createClient();
   const { data: projeto } = await supabase
     .from("projetos")
     .select("id, nome")
-    .eq("id", id)
+    .eq("slug", slug)
     .single();
 
   if (!projeto) {
@@ -58,7 +58,7 @@ export default async function NovaEtapaPage({
           <div className="mt-2 flex items-center gap-4">
             <SubmitButton>Salvar</SubmitButton>
             <Link
-              href={`/projetos/${projeto.id}`}
+              href={`/projetos/${slug}`}
               className="text-sm text-zinc-500 underline dark:text-zinc-400"
             >
               Cancelar

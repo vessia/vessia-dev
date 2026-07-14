@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfessor } from "@/lib/auth/dal";
 import { criacaoProjetoHabilitada } from "@/lib/projetos/feature-flags";
+import { gerarSlugUnico } from "@/lib/slugs/unico";
+import { buscarSlugPorId } from "@/lib/slugs/buscar";
 
 export async function criarProjeto(formData: FormData) {
   const user = await requireProfessor();
@@ -30,6 +32,7 @@ export async function criarProjeto(formData: FormData) {
   }
 
   const supabase = await createClient();
+  const slug = await gerarSlugUnico("projetos", null, nome);
   const { data: projeto, error } = await supabase
     .from("projetos")
     .insert({
@@ -38,6 +41,7 @@ export async function criarProjeto(formData: FormData) {
       cliente,
       termo_especifico: termoEspecifico,
       criado_por: user.id,
+      slug,
     })
     .select("id")
     .single();
@@ -80,20 +84,23 @@ export async function atualizarProjeto(formData: FormData) {
   const termoEspecifico =
     String(formData.get("termo_especifico") ?? "").trim() || null;
 
+  const supabase = await createClient();
+
   if (!nome) {
+    const slug = await buscarSlugPorId(supabase, "projetos", id);
     redirect(
-      `/projetos/${id}/editar?error=${encodeURIComponent("Nome é obrigatório.")}`,
+      `/projetos/${slug}/editar?error=${encodeURIComponent("Nome é obrigatório.")}`,
     );
   }
 
-  const supabase = await createClient();
   const { error } = await supabase
     .from("projetos")
     .update({ nome, descricao, cliente, termo_especifico: termoEspecifico })
     .eq("id", id);
 
   if (error) {
-    redirect(`/projetos/${id}/editar?error=${encodeURIComponent(error.message)}`);
+    const slug = await buscarSlugPorId(supabase, "projetos", id);
+    redirect(`/projetos/${slug}/editar?error=${encodeURIComponent(error.message)}`);
   }
 
   redirect("/projetos");

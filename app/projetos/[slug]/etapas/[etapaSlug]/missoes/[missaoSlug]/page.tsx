@@ -24,11 +24,11 @@ export default async function MissaoDetalhePage({
   params,
   searchParams,
 }: {
-  params: Promise<{ id: string; etapaId: string; missaoId: string }>;
+  params: Promise<{ slug: string; etapaSlug: string; missaoSlug: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
   const user = await requireOnboardingCompleto();
-  const { id: projetoId, etapaId, missaoId } = await params;
+  const { slug: projetoSlug, etapaSlug, missaoSlug } = await params;
   const { error } = await searchParams;
   const supabase = await createClient();
 
@@ -41,13 +41,38 @@ export default async function MissaoDetalhePage({
   const ehAluno = profile?.papel === "aluno";
   const ehProfessor = profile?.papel === "professor";
 
+  const { data: projeto } = await supabase
+    .from("projetos")
+    .select("id, termo_especifico")
+    .eq("slug", projetoSlug)
+    .single();
+
+  if (!projeto) {
+    notFound();
+  }
+
+  const projetoId = projeto.id;
+
+  const { data: etapa } = await supabase
+    .from("etapas")
+    .select("id")
+    .eq("projeto_id", projetoId)
+    .eq("slug", etapaSlug)
+    .single();
+
+  if (!etapa) {
+    notFound();
+  }
+
+  const etapaId = etapa.id;
+
   const { data: missao } = await supabase
     .from("missoes")
     .select(
       "id, titulo, descricao, tipo, objetivo, entrega_esperada, criterio_avaliacao, prazo, vagas, obrigatoria, limite_reenvios, concluida_em, concluida_por, etapa_id",
     )
-    .eq("id", missaoId)
     .eq("etapa_id", etapaId)
+    .eq("slug", missaoSlug)
     .single();
 
   if (!missao) {
@@ -112,15 +137,9 @@ export default async function MissaoDetalhePage({
   // projeto define um termo — aceite é por projeto, então vale pra qualquer
   // missão dele, não só esta.
   let termoPendente = false;
-  let termoEspecifico: string | null = null;
+  const termoEspecifico = projeto.termo_especifico;
 
   if (podeParticiparAgora) {
-    const { data: projeto } = await supabase
-      .from("projetos")
-      .select("termo_especifico")
-      .eq("id", projetoId)
-      .single();
-
     const { data: vinculoAluno } = await supabase
       .from("projeto_alunos")
       .select("termo_aceito_em")
@@ -128,7 +147,6 @@ export default async function MissaoDetalhePage({
       .eq("aluno_id", user.id)
       .maybeSingle();
 
-    termoEspecifico = projeto?.termo_especifico ?? null;
     termoPendente = precisaAceitarTermoEspecifico({
       termoEspecifico,
       termoAceitoEm: vinculoAluno?.termo_aceito_em ?? null,
@@ -164,7 +182,7 @@ export default async function MissaoDetalhePage({
         <div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             <Link
-              href={`/projetos/${projetoId}/etapas/${etapaId}`}
+              href={`/projetos/${projetoSlug}/etapas/${etapaSlug}`}
               className="underline"
             >
               Voltar para a etapa

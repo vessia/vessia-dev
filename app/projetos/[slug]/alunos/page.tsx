@@ -34,25 +34,27 @@ export default async function AlunosDoProjetoPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
   searchParams: Promise<{ error?: string; busca?: string }>;
 }) {
-  const { id: projetoId } = await params;
-  // 05 - Fluxos.md §2.1: qualquer professor vinculado (proprietário ou
-  // colaborador) pode atribuir/gerenciar alunos.
-  await requireProfessorDoProjeto(projetoId);
-  const { error, busca } = await searchParams;
+  const { slug } = await params;
   const supabase = await createClient();
 
   const { data: projeto } = await supabase
     .from("projetos")
     .select("id, nome")
-    .eq("id", projetoId)
+    .eq("slug", slug)
     .single();
 
   if (!projeto) {
     notFound();
   }
+
+  const projetoId = projeto.id;
+  // 05 - Fluxos.md §2.1: qualquer professor vinculado (proprietário ou
+  // colaborador) pode atribuir/gerenciar alunos.
+  await requireProfessorDoProjeto(projetoId);
+  const { error, busca } = await searchParams;
 
   const alunos = await buscarAlunosDoProjeto(supabase, projetoId);
   const termoBusca = busca?.trim();
@@ -71,7 +73,7 @@ export default async function AlunosDoProjetoPage({
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 p-4 sm:p-8">
       <div>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          <Link href={`/projetos/${projetoId}`} className="underline">
+          <Link href={`/projetos/${slug}`} className="underline">
             {projeto.nome}
           </Link>
         </p>

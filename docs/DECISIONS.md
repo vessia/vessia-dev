@@ -243,10 +243,10 @@ Log de decisões de produto e engenharia, no formato Contexto / Decisão / Conse
 
 ---
 
-### 2026-07 — URL amigável (slug) por projeto — reconsiderada, ainda adiada
-**Contexto:** essa ideia apareceu antes (sugestão do ChatGPT) e foi recusada por falta de caso de uso real. Agora existe um caso real: navegar por UUID é desconfortável na prática.
-**Decisão:** continua adiada — não porque o caso de uso deixou de ser real, mas porque é a mudança mais cara da lista (toca todas as rotas aninhadas de projeto: etapas, missões, alunos, professores, edição) para um ganho puramente estético, sem nenhuma função quebrada por causa disso. Os outros itens encontrados na mesma sessão de teste (404 pouco amigável, busca por e-mail, vagas sem limite, bug de navegação) têm impacto funcional real e custo menor — esses vêm primeiro.
-**Consequência:** revisitar quando o restante da lista estiver resolvido, não antes.
+### 2026-07 — URL amigável (slug) por Projeto, Etapa e Missão — implementada
+**Contexto:** essa ideia tinha sido adiada por ser a mudança mais cara da lista (toca todas as rotas aninhadas de projeto) para um ganho até então puramente estético. Com o resto da lista resolvido e a navegação por UUID incomodando na prática, o custo passou a valer a pena.
+**Decisão:** `projetos`, `etapas` e `missoes` ganham uma coluna `slug` (migration `015_slugs.sql`), única globalmente para projeto e escopada ao pai para etapa/missão. Gerado uma única vez na criação (minúsculas, sem acento, espaço/pontuação vira hífen — `lib/slugs/gerar.ts`), com colisão resolvida por sufixo numérico (`lib/slugs/unico.ts`). Não é regenerado ao renomear — o slug de criação é definitivo. As rotas `/projetos/[id]/...` viram `/projetos/[slug]/etapas/[etapaSlug]/missoes/[missaoSlug]`; cada página resolve slug → id logo no início e o resto do código continua usando o id interno, sem mudança. Sem compatibilidade com links antigos por UUID — não havia alunos reais usando o sistema ainda.
+**Consequência:** URLs legíveis (`/projetos/biblia-3d/etapas/descoberta`). Toda a suíte de testes e2e que navega por URL precisou trocar UUID por slug.
 
 ---
 

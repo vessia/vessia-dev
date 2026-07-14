@@ -14,24 +14,24 @@ test("aluno navega pelo mapa do projeto: progresso, status e detalhe da missão"
 }) => {
   const { professor, aluno } = lerUsuariosDeTeste();
 
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Mapa Aluno E2E ${Date.now()}`,
     { alunoAceitoId: aluno.id },
   );
-  const etapaId = await criarEtapaDeTeste(projetoId, "Descoberta", 1);
+  const etapa = await criarEtapaDeTeste(projeto.id, "Descoberta", 1);
 
   // C: sem dependências, não concluída -> disponível.
-  const missaoCId = await criarMissaoDeTeste(etapaId, "Missão C - Base");
+  const missaoC = await criarMissaoDeTeste(etapa.id, "Missão C - Base");
   // B: depende de C (que não está concluída) -> bloqueada.
-  const missaoBId = await criarMissaoDeTeste(etapaId, "Missão B - Depende de C");
-  await criarDependenciaDeTeste(missaoBId, missaoCId);
+  const missaoB = await criarMissaoDeTeste(etapa.id, "Missão B - Depende de C");
+  await criarDependenciaDeTeste(missaoB.id, missaoC.id);
   // A: sem dependências, marcada como concluída -> concluída.
-  const missaoAId = await criarMissaoDeTeste(etapaId, "Missão A - Primeira");
-  await marcarMissaoConcluidaDeTeste(missaoAId, professor.id);
+  const missaoA = await criarMissaoDeTeste(etapa.id, "Missão A - Primeira");
+  await marcarMissaoConcluidaDeTeste(missaoA.id, professor.id);
 
   await loginViaUI(page, aluno);
-  await page.goto(`/projetos/${projetoId}`);
+  await page.goto(`/projetos/${projeto.slug}`);
 
   // 3 missões obrigatórias, 1 concluída -> 33%.
   await expect(page.getByText("Progresso: 33%")).toBeVisible();
@@ -51,7 +51,7 @@ test("aluno navega pelo mapa do projeto: progresso, status e detalhe da missão"
 
   // Abre o detalhe da missão disponível pelo mapa.
   await page.getByRole("link", { name: /Missão C - Base/ }).click();
-  await page.waitForURL(`**/missoes/${missaoCId}`);
+  await page.waitForURL(`**/missoes/${missaoC.slug}`);
   await expect(page.getByTestId("missao-status-badge")).toContainText(
     "Disponível",
   );
@@ -65,7 +65,9 @@ test("aluno navega pelo mapa do projeto: progresso, status e detalhe da missão"
 
   // Missão bloqueada: acessível direto pela URL (leitura geral), mostra a
   // dependência pendente e não mostra nenhum botão de participar.
-  await page.goto(`/projetos/${projetoId}/etapas/${etapaId}/missoes/${missaoBId}`);
+  await page.goto(
+    `/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missaoB.slug}`,
+  );
   await expect(page.getByTestId("missao-status-badge")).toContainText(
     "Bloqueada",
   );
@@ -75,7 +77,9 @@ test("aluno navega pelo mapa do projeto: progresso, status e detalhe da missão"
   );
 
   // Missão concluída: badge correto, sem botão de participar.
-  await page.goto(`/projetos/${projetoId}/etapas/${etapaId}/missoes/${missaoAId}`);
+  await page.goto(
+    `/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missaoA.slug}`,
+  );
   await expect(page.getByTestId("missao-status-badge")).toContainText(
     "Concluída",
   );

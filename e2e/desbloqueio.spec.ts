@@ -13,31 +13,34 @@ test("professor marca missão base como concluída via UI e a missão dependente
 }) => {
   const { professor, aluno } = lerUsuariosDeTeste();
 
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Desbloqueio E2E ${Date.now()}`,
     { alunoAceitoId: aluno.id },
   );
-  const etapaId = await criarEtapaDeTeste(projetoId, "Descoberta", 1);
-  const missaoBaseId = await criarMissaoDeTeste(etapaId, "Missão Base Desbloqueio");
-  const missaoDependenteId = await criarMissaoDeTeste(
-    etapaId,
+  const etapa = await criarEtapaDeTeste(projeto.id, "Descoberta", 1);
+  const missaoBase = await criarMissaoDeTeste(
+    etapa.id,
+    "Missão Base Desbloqueio",
+  );
+  const missaoDependente = await criarMissaoDeTeste(
+    etapa.id,
     "Missão Dependente Desbloqueio",
   );
-  await criarDependenciaDeTeste(missaoDependenteId, missaoBaseId);
+  await criarDependenciaDeTeste(missaoDependente.id, missaoBase.id);
 
   // 1. Antes: aluno vê a dependente como bloqueada, tanto no mapa quanto no
   // detalhe direto.
   await loginViaUI(page, aluno);
 
-  await page.goto(`/projetos/${projetoId}`);
+  await page.goto(`/projetos/${projeto.slug}`);
   await expect(
     page.getByRole("link", { name: /Missão Dependente Desbloqueio/ }),
   ).toHaveCount(0);
   await expect(page.getByText("Missão Dependente Desbloqueio")).toBeVisible();
 
   await page.goto(
-    `/projetos/${projetoId}/etapas/${etapaId}/missoes/${missaoDependenteId}`,
+    `/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missaoDependente.slug}`,
   );
   await expect(page.getByTestId("missao-status-badge")).toContainText(
     "Bloqueada",
@@ -52,7 +55,7 @@ test("professor marca missão base como concluída via UI e a missão dependente
   // não seed direto no banco.
   await loginViaUI(page, professor);
   await page.goto(
-    `/projetos/${projetoId}/etapas/${etapaId}/missoes/${missaoBaseId}`,
+    `/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missaoBase.slug}`,
   );
   await page
     .getByRole("button", { name: "Marcar missão como concluída" })
@@ -63,13 +66,13 @@ test("professor marca missão base como concluída via UI e a missão dependente
   // disponível para o aluno — status é sempre calculado, nunca armazenado.
   await loginViaUI(page, aluno);
 
-  await page.goto(`/projetos/${projetoId}`);
+  await page.goto(`/projetos/${projeto.slug}`);
   await expect(
     page.getByRole("link", { name: /Missão Dependente Desbloqueio/ }),
   ).toBeVisible();
 
   await page.goto(
-    `/projetos/${projetoId}/etapas/${etapaId}/missoes/${missaoDependenteId}`,
+    `/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missaoDependente.slug}`,
   );
   await expect(page.getByTestId("missao-status-badge")).toContainText(
     "Disponível",

@@ -29,17 +29,17 @@ test("aluno envia uma imagem como entrega e o professor consegue vê-la na avali
   page,
 }) => {
   const { professor, aluno } = lerUsuariosDeTeste();
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Upload Imagem E2E ${Date.now()}`,
     { alunoAceitoId: aluno.id },
   );
-  const etapaId = await criarEtapaDeTeste(projetoId, "Descoberta", 1);
-  const missaoId = await criarMissaoDeTeste(etapaId, "Missão Upload Imagem");
-  const participacaoId = await criarParticipacaoDeTeste(missaoId, aluno.id);
+  const etapa = await criarEtapaDeTeste(projeto.id, "Descoberta", 1);
+  const missao = await criarMissaoDeTeste(etapa.id, "Missão Upload Imagem");
+  const participacaoId = await criarParticipacaoDeTeste(missao.id, aluno.id);
 
   await loginViaUI(page, aluno);
-  await page.goto(`/projetos/${projetoId}/etapas/${etapaId}/missoes/${missaoId}`);
+  await page.goto(`/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missao.slug}`);
 
   await page.getByRole("radio", { name: "Imagem ou PDF" }).check();
   await page.locator('input[type="file"]').setInputFiles({
@@ -77,17 +77,17 @@ test("aluno envia um PDF como entrega e o professor vê o link para abrir", asyn
   page,
 }) => {
   const { professor, aluno } = lerUsuariosDeTeste();
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Upload PDF E2E ${Date.now()}`,
     { alunoAceitoId: aluno.id },
   );
-  const etapaId = await criarEtapaDeTeste(projetoId, "Descoberta", 1);
-  const missaoId = await criarMissaoDeTeste(etapaId, "Missão Upload PDF");
-  const participacaoId = await criarParticipacaoDeTeste(missaoId, aluno.id);
+  const etapa = await criarEtapaDeTeste(projeto.id, "Descoberta", 1);
+  const missao = await criarMissaoDeTeste(etapa.id, "Missão Upload PDF");
+  const participacaoId = await criarParticipacaoDeTeste(missao.id, aluno.id);
 
   await loginViaUI(page, aluno);
-  await page.goto(`/projetos/${projetoId}/etapas/${etapaId}/missoes/${missaoId}`);
+  await page.goto(`/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missao.slug}`);
 
   await page.getByRole("radio", { name: "Imagem ou PDF" }).check();
   await page.locator('input[type="file"]').setInputFiles({
@@ -118,17 +118,17 @@ test("upload de tipo de arquivo não suportado é bloqueado com mensagem amigáv
   page,
 }) => {
   const { professor, aluno } = lerUsuariosDeTeste();
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Upload Invalido E2E ${Date.now()}`,
     { alunoAceitoId: aluno.id },
   );
-  const etapaId = await criarEtapaDeTeste(projetoId, "Descoberta", 1);
-  const missaoId = await criarMissaoDeTeste(etapaId, "Missão Upload Invalido");
-  const participacaoId = await criarParticipacaoDeTeste(missaoId, aluno.id);
+  const etapa = await criarEtapaDeTeste(projeto.id, "Descoberta", 1);
+  const missao = await criarMissaoDeTeste(etapa.id, "Missão Upload Invalido");
+  const participacaoId = await criarParticipacaoDeTeste(missao.id, aluno.id);
 
   await loginViaUI(page, aluno);
-  await page.goto(`/projetos/${projetoId}/etapas/${etapaId}/missoes/${missaoId}`);
+  await page.goto(`/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missao.slug}`);
 
   await page.getByRole("radio", { name: "Imagem ou PDF" }).check();
   await page.locator('input[type="file"]').setInputFiles({

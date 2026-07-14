@@ -53,7 +53,7 @@ test("proprietário adiciona colaborador pela UI, e o colaborador passa a editar
   // padrão de 30s deste ambiente (mesmo padrão do mvp-completo.spec.ts).
   test.setTimeout(60_000);
   const { professor } = lerUsuariosDeTeste();
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Colaborador E2E ${Date.now()}`,
   );
@@ -64,7 +64,7 @@ test("proprietário adiciona colaborador pela UI, e o colaborador passa a editar
 
   try {
     await loginViaUI(page, professor);
-    await page.goto(`/projetos/${projetoId}/professores`);
+    await page.goto(`/projetos/${projeto.slug}/professores`);
     await page
       .getByLabel("Buscar professor por nome ou e-mail")
       .fill(colaborador.nome);
@@ -83,7 +83,7 @@ test("proprietário adiciona colaborador pela UI, e o colaborador passa a editar
     // aparecer na lista — RLS (eh_professor_do_projeto) cobre proprietário
     // OU colaborador igualmente.
     await loginViaUI(page, colaborador);
-    await page.goto(`/projetos/${projetoId}`);
+    await page.goto(`/projetos/${projeto.slug}`);
     await expect(
       page.getByRole("link", { name: "Editar projeto" }),
     ).toBeVisible();
@@ -92,16 +92,16 @@ test("proprietário adiciona colaborador pela UI, e o colaborador passa a editar
       page.getByRole("link", { name: "Professores" }),
     ).toHaveCount(0);
 
-    await page.goto(`/projetos/${projetoId}/etapas/nova`);
+    await page.goto(`/projetos/${projeto.slug}/etapas/nova`);
     await page.getByLabel("Nome").fill("Etapa Criada Pelo Colaborador");
     await page.getByLabel("Ordem").fill("1");
     await page.getByRole("button", { name: "Salvar" }).click();
-    await page.waitForURL(`**/projetos/${projetoId}`);
+    await page.waitForURL(`**/projetos/${projeto.slug}`);
     await expect(
       page.getByText("Etapa Criada Pelo Colaborador"),
     ).toBeVisible();
   } finally {
-    await supabaseAdmin.from("projetos").delete().eq("id", projetoId);
+    await supabaseAdmin.from("projetos").delete().eq("id", projeto.id);
     await supabaseAdmin.auth.admin.deleteUser(colaborador.id);
   }
 });
@@ -111,7 +111,7 @@ test("proprietário remove colaborador e ele perde o acesso ao projeto", async (
 }) => {
   test.setTimeout(60_000);
   const { professor } = lerUsuariosDeTeste();
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Remover Colaborador E2E ${Date.now()}`,
   );
@@ -119,11 +119,11 @@ test("proprietário remove colaborador e ele perde o acesso ao projeto", async (
     "professor",
     `Colaborador Removido E2E ${Date.now()}`,
   );
-  await adicionarColaboradorDeTeste(projetoId, colaborador.id, professor.id);
+  await adicionarColaboradorDeTeste(projeto.id, colaborador.id, professor.id);
 
   try {
     await loginViaUI(page, professor);
-    await page.goto(`/projetos/${projetoId}/professores`);
+    await page.goto(`/projetos/${projeto.slug}/professores`);
     await expect(page.getByText(colaborador.nome)).toBeVisible();
     await page
       .getByRole("listitem")
@@ -135,10 +135,10 @@ test("proprietário remove colaborador e ele perde o acesso ao projeto", async (
     // Sem vínculo, a RLS bloqueia até a leitura do projeto — a página some
     // (404), não sobra um "casco" vazio de etapas.
     await loginViaUI(page, colaborador);
-    const resposta = await page.goto(`/projetos/${projetoId}`);
+    const resposta = await page.goto(`/projetos/${projeto.slug}`);
     expect(resposta?.status()).toBe(404);
   } finally {
-    await supabaseAdmin.from("projetos").delete().eq("id", projetoId);
+    await supabaseAdmin.from("projetos").delete().eq("id", projeto.id);
     await supabaseAdmin.auth.admin.deleteUser(colaborador.id);
   }
 });
@@ -149,10 +149,10 @@ test("professor atribui aluno pela UI, aluno vê o convite no dashboard e aceita
   test.setTimeout(60_000);
   const { professor, aluno } = lerUsuariosDeTeste();
   const nomeProjeto = `Projeto Atribuir Aluno E2E ${Date.now()}`;
-  const projetoId = await criarProjetoDeTeste(professor.id, nomeProjeto);
+  const projeto = await criarProjetoDeTeste(professor.id, nomeProjeto);
 
   await loginViaUI(page, professor);
-  await page.goto(`/projetos/${projetoId}/alunos`);
+  await page.goto(`/projetos/${projeto.slug}/alunos`);
   await page.getByLabel("Buscar aluno por nome ou e-mail").fill(aluno.nome);
   await page.getByRole("button", { name: "Buscar" }).click();
   await page
@@ -172,7 +172,7 @@ test("professor atribui aluno pela UI, aluno vê o convite no dashboard e aceita
 
   // Depois de aceitar, o projeto aparece normalmente (conteúdo visível, sem
   // banner de convite pendente).
-  await page.goto(`/projetos/${projetoId}`);
+  await page.goto(`/projetos/${projeto.slug}`);
   await expect(page.getByText("Etapas")).toBeVisible();
   await expect(page.getByTestId("banner-info")).toHaveCount(0);
 });
@@ -182,7 +182,7 @@ test("professor busca colaborador por e-mail (não só nome) e consegue adiciona
 }) => {
   test.setTimeout(60_000);
   const { professor } = lerUsuariosDeTeste();
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Busca Email E2E ${Date.now()}`,
   );
@@ -193,7 +193,7 @@ test("professor busca colaborador por e-mail (não só nome) e consegue adiciona
 
   try {
     await loginViaUI(page, professor);
-    await page.goto(`/projetos/${projetoId}/professores`);
+    await page.goto(`/projetos/${projeto.slug}/professores`);
     // Busca só pelo e-mail — nome digitado não tem nenhuma relação com ele.
     await page
       .getByLabel("Buscar professor por nome ou e-mail")
@@ -213,7 +213,7 @@ test("professor busca colaborador por e-mail (não só nome) e consegue adiciona
       page.locator("li", { hasText: colaborador.nome }),
     ).toContainText("Colaborador");
   } finally {
-    await supabaseAdmin.from("projetos").delete().eq("id", projetoId);
+    await supabaseAdmin.from("projetos").delete().eq("id", projeto.id);
     await supabaseAdmin.auth.admin.deleteUser(colaborador.id);
   }
 });
@@ -222,14 +222,14 @@ test("busca por e-mail em formato inválido mostra mensagem clara, sem tentar bu
   page,
 }) => {
   const { professor } = lerUsuariosDeTeste();
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Email Invalido E2E ${Date.now()}`,
   );
 
   try {
     await loginViaUI(page, professor);
-    await page.goto(`/projetos/${projetoId}/alunos`);
+    await page.goto(`/projetos/${projeto.slug}/alunos`);
     await page.getByLabel("Buscar aluno por nome ou e-mail").fill("aluno@semdominio");
     await page.getByRole("button", { name: "Buscar" }).click();
 
@@ -237,7 +237,7 @@ test("busca por e-mail em formato inválido mostra mensagem clara, sem tentar bu
       "Formato de e-mail inválido",
     );
   } finally {
-    await supabaseAdmin.from("projetos").delete().eq("id", projetoId);
+    await supabaseAdmin.from("projetos").delete().eq("id", projeto.id);
   }
 });
 
@@ -247,8 +247,8 @@ test("aluno recusa o convite e vê mensagem informativa na página do projeto", 
   test.setTimeout(60_000);
   const { professor, aluno } = lerUsuariosDeTeste();
   const nomeProjeto = `Projeto Recusar Convite E2E ${Date.now()}`;
-  const projetoId = await criarProjetoDeTeste(professor.id, nomeProjeto);
-  await atribuirAlunoDeTeste(projetoId, aluno.id, professor.id);
+  const projeto = await criarProjetoDeTeste(professor.id, nomeProjeto);
+  await atribuirAlunoDeTeste(projeto.id, aluno.id, professor.id);
 
   await loginViaUI(page, aluno);
   await page.goto("/dashboard");
@@ -257,7 +257,7 @@ test("aluno recusa o convite e vê mensagem informativa na página do projeto", 
   await page.waitForURL("**/dashboard");
   await expect(page.getByText(nomeProjeto)).toHaveCount(0);
 
-  await page.goto(`/projetos/${projetoId}`);
+  await page.goto(`/projetos/${projeto.slug}`);
   await expect(
     page.getByText("Você recusou o convite para este projeto."),
   ).toBeVisible();
@@ -269,12 +269,12 @@ test("aluno aceito sai do projeto e o status muda para 'Você saiu' na lista", a
   test.setTimeout(60_000);
   const { professor, aluno } = lerUsuariosDeTeste();
   const nomeProjeto = `Projeto Sair E2E ${Date.now()}`;
-  const projetoId = await criarProjetoDeTeste(professor.id, nomeProjeto, {
+  const projeto = await criarProjetoDeTeste(professor.id, nomeProjeto, {
     alunoAceitoId: aluno.id,
   });
 
   await loginViaUI(page, aluno);
-  await page.goto(`/projetos/${projetoId}`);
+  await page.goto(`/projetos/${projeto.slug}`);
   await expect(
     page.getByRole("button", { name: "Sair do projeto" }),
   ).toBeVisible();
@@ -288,7 +288,7 @@ test("aluno aceito sai do projeto e o status muda para 'Você saiu' na lista", a
   await expect(card).toContainText("Você saiu");
 
   // Sem status 'aceito' mais, o conteúdo do projeto some.
-  await page.goto(`/projetos/${projetoId}`);
+  await page.goto(`/projetos/${projeto.slug}`);
   await expect(page.getByText("Você saiu deste projeto.")).toBeVisible();
 });
 
@@ -297,14 +297,14 @@ test("professor remove aluno aceito e ele perde acesso ao conteúdo do projeto",
 }) => {
   test.setTimeout(60_000);
   const { professor, aluno } = lerUsuariosDeTeste();
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Remover Aluno E2E ${Date.now()}`,
     { alunoAceitoId: aluno.id },
   );
 
   await loginViaUI(page, professor);
-  await page.goto(`/projetos/${projetoId}/alunos`);
+  await page.goto(`/projetos/${projeto.slug}/alunos`);
   await expect(
     page.locator("li", { hasText: aluno.nome }),
   ).toContainText("Aceito");
@@ -324,7 +324,7 @@ test("professor remove aluno aceito e ele perde acesso ao conteúdo do projeto",
   ).toHaveCount(0);
 
   await loginViaUI(page, aluno);
-  await page.goto(`/projetos/${projetoId}`);
+  await page.goto(`/projetos/${projeto.slug}`);
   await expect(
     page.getByText("Você foi removido deste projeto pelo professor."),
   ).toBeVisible();
@@ -343,7 +343,7 @@ for (const statusInicial of ["removido", "saiu", "recusado"] as const) {
       "aluno",
       `Aluno Reconvite ${statusInicial} E2E ${Date.now()}`,
     );
-    const projetoId = await criarProjetoDeTeste(
+    const projeto = await criarProjetoDeTeste(
       professor.id,
       `Projeto Reconvite ${statusInicial} E2E ${Date.now()}`,
     );
@@ -354,7 +354,7 @@ for (const statusInicial of ["removido", "saiu", "recusado"] as const) {
       const { error: seedError } = await supabaseAdmin
         .from("projeto_alunos")
         .insert({
-          projeto_id: projetoId,
+          projeto_id: projeto.id,
           aluno_id: alunoAvulso.id,
           status: statusInicial,
           atribuido_por: professor.id,
@@ -365,7 +365,7 @@ for (const statusInicial of ["removido", "saiu", "recusado"] as const) {
       }
 
       await loginViaUI(page, professor);
-      await page.goto(`/projetos/${projetoId}/alunos`);
+      await page.goto(`/projetos/${projeto.slug}/alunos`);
 
       const linha = page
         .getByRole("listitem")
@@ -382,7 +382,7 @@ for (const statusInicial of ["removido", "saiu", "recusado"] as const) {
       const { data } = await supabaseAdmin
         .from("projeto_alunos")
         .select("status, respondido_em, atribuido_por")
-        .eq("projeto_id", projetoId)
+        .eq("projeto_id", projeto.id)
         .eq("aluno_id", alunoAvulso.id)
         .single();
 
@@ -390,7 +390,7 @@ for (const statusInicial of ["removido", "saiu", "recusado"] as const) {
       expect(data?.respondido_em).toBeNull();
       expect(data?.atribuido_por).toBe(professor.id);
     } finally {
-      await supabaseAdmin.from("projetos").delete().eq("id", projetoId);
+      await supabaseAdmin.from("projetos").delete().eq("id", projeto.id);
       await supabaseAdmin.auth.admin.deleteUser(alunoAvulso.id);
     }
   });

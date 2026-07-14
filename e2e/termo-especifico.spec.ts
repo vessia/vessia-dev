@@ -15,16 +15,18 @@ test("aluno não vê 'Participar' sem aceitar o termo específico do projeto, e 
   page,
 }) => {
   const { professor, aluno } = lerUsuariosDeTeste();
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Termo Bloqueado E2E ${Date.now()}`,
     { alunoAceitoId: aluno.id, termoEspecifico: TEXTO_TERMO },
   );
-  const etapaId = await criarEtapaDeTeste(projetoId, "Descoberta", 1);
-  const missaoId = await criarMissaoDeTeste(etapaId, "Missão Termo Bloqueado");
+  const etapa = await criarEtapaDeTeste(projeto.id, "Descoberta", 1);
+  const missao = await criarMissaoDeTeste(etapa.id, "Missão Termo Bloqueado");
 
   await loginViaUI(page, aluno);
-  await page.goto(`/projetos/${projetoId}/etapas/${etapaId}/missoes/${missaoId}`);
+  await page.goto(
+    `/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missao.slug}`,
+  );
 
   await expect(page.getByText("Termo específico deste projeto")).toBeVisible();
   await expect(page.getByText(TEXTO_TERMO)).toBeVisible();
@@ -34,7 +36,7 @@ test("aluno não vê 'Participar' sem aceitar o termo específico do projeto, e 
   const { count } = await supabaseAdmin
     .from("participacoes")
     .select("*", { count: "exact", head: true })
-    .eq("missao_id", missaoId)
+    .eq("missao_id", missao.id)
     .eq("aluno_id", aluno.id);
   expect(count).toBe(0);
 });
@@ -43,16 +45,18 @@ test("aluno participa normalmente quando o projeto não define termo específico
   page,
 }) => {
   const { professor, aluno } = lerUsuariosDeTeste();
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Sem Termo E2E ${Date.now()}`,
     { alunoAceitoId: aluno.id },
   );
-  const etapaId = await criarEtapaDeTeste(projetoId, "Descoberta", 1);
-  const missaoId = await criarMissaoDeTeste(etapaId, "Missão Sem Termo");
+  const etapa = await criarEtapaDeTeste(projeto.id, "Descoberta", 1);
+  const missao = await criarMissaoDeTeste(etapa.id, "Missão Sem Termo");
 
   await loginViaUI(page, aluno);
-  await page.goto(`/projetos/${projetoId}/etapas/${etapaId}/missoes/${missaoId}`);
+  await page.goto(
+    `/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missao.slug}`,
+  );
 
   await expect(page.getByText("Termo específico deste projeto")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Participar" })).toBeVisible();
@@ -65,17 +69,19 @@ test("aceitar o termo registra a data, libera a participação, e não pede de n
   page,
 }) => {
   const { professor, aluno } = lerUsuariosDeTeste();
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Termo Aceito E2E ${Date.now()}`,
     { alunoAceitoId: aluno.id, termoEspecifico: TEXTO_TERMO },
   );
-  const etapaId = await criarEtapaDeTeste(projetoId, "Descoberta", 1);
-  const missaoAId = await criarMissaoDeTeste(etapaId, "Missão Termo A");
-  const missaoBId = await criarMissaoDeTeste(etapaId, "Missão Termo B");
+  const etapa = await criarEtapaDeTeste(projeto.id, "Descoberta", 1);
+  const missaoA = await criarMissaoDeTeste(etapa.id, "Missão Termo A");
+  const missaoB = await criarMissaoDeTeste(etapa.id, "Missão Termo B");
 
   await loginViaUI(page, aluno);
-  await page.goto(`/projetos/${projetoId}/etapas/${etapaId}/missoes/${missaoAId}`);
+  await page.goto(
+    `/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missaoA.slug}`,
+  );
 
   await expect(page.getByRole("button", { name: "Li e concordo" })).toBeVisible();
   await page.getByRole("button", { name: "Li e concordo" }).click();
@@ -87,7 +93,7 @@ test("aceitar o termo registra a data, libera a participação, e não pede de n
   const { data: vinculo } = await supabaseAdmin
     .from("projeto_alunos")
     .select("termo_aceito_em")
-    .eq("projeto_id", projetoId)
+    .eq("projeto_id", projeto.id)
     .eq("aluno_id", aluno.id)
     .single();
   expect(vinculo?.termo_aceito_em).toBeTruthy();
@@ -97,7 +103,9 @@ test("aceitar o termo registra a data, libera a participação, e não pede de n
 
   // Aceite é por projeto, não por missão — a segunda missão do MESMO
   // projeto já libera "Participar" direto, sem pedir o termo de novo.
-  await page.goto(`/projetos/${projetoId}/etapas/${etapaId}/missoes/${missaoBId}`);
+  await page.goto(
+    `/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missaoB.slug}`,
+  );
   await expect(page.getByText("Termo específico deste projeto")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Participar" })).toBeVisible();
 });

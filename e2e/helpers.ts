@@ -2,6 +2,37 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Page } from "@playwright/test";
 import { supabaseAdmin } from "./supabase-admin";
+import { gerarSlugBase } from "../lib/slugs/gerar";
+
+// Não usa lib/slugs/unico.ts aqui: aquele módulo importa "server-only", que
+// lança erro fora de um Server Component/Action — o que inclui o runtime de
+// teste do Playwright. Mesma lógica de colisão (sufixo numérico),
+// reimplementada sem a trava, só pra dado de teste via supabaseAdmin.
+async function gerarSlugUnicoDeTeste(
+  tabela: "projetos" | "etapas" | "missoes",
+  filtroEscopo: Record<string, string> | null,
+  textoBase: string,
+): Promise<string> {
+  const base = gerarSlugBase(textoBase);
+  let candidato = base;
+  let sufixo = 1;
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    let query = supabaseAdmin.from(tabela).select("id").eq("slug", candidato);
+    if (filtroEscopo) {
+      for (const [coluna, valor] of Object.entries(filtroEscopo)) {
+        query = query.eq(coluna, valor);
+      }
+    }
+    const { data } = await query.maybeSingle();
+    if (!data) {
+      return candidato;
+    }
+    sufixo += 1;
+    candidato = `${base}-${sufixo}`;
+  }
+}
 
 const STATE_PATH = path.resolve(__dirname, ".auth/state.json");
 
@@ -42,14 +73,16 @@ export async function criarProjetoDeTeste(
   nome: string,
   opcoes?: { alunoAceitoId?: string; termoEspecifico?: string },
 ) {
+  const slug = await gerarSlugUnicoDeTeste("projetos", null, nome);
   const { data, error } = await supabaseAdmin
     .from("projetos")
     .insert({
       nome,
       criado_por: criadoPor,
       termo_especifico: opcoes?.termoEspecifico ?? null,
+      slug,
     })
-    .select("id")
+    .select("id, slug")
     .single();
 
   if (error || !data) {
@@ -91,7 +124,7 @@ export async function criarProjetoDeTeste(
     }
   }
 
-  return projetoId;
+  return { id: projetoId, slug: data.slug as string };
 }
 
 // Seeds diretos das tabelas de vínculo do Bloco 12 — usados quando o teste
@@ -136,17 +169,22 @@ export async function criarEtapaDeTeste(
   nome: string,
   ordem: number,
 ) {
+  const slug = await gerarSlugUnicoDeTeste(
+    "etapas",
+    { projeto_id: projetoId },
+    nome,
+  );
   const { data, error } = await supabaseAdmin
     .from("etapas")
-    .insert({ projeto_id: projetoId, nome, ordem })
-    .select("id")
+    .insert({ projeto_id: projetoId, nome, ordem, slug })
+    .select("id, slug")
     .single();
 
   if (error || !data) {
     throw new Error(`Falha ao criar etapa de teste: ${error?.message}`);
   }
 
-  return data.id as string;
+  return { id: data.id as string, slug: data.slug as string };
 }
 
 export async function criarMissaoDeTeste(
@@ -154,6 +192,11 @@ export async function criarMissaoDeTeste(
   titulo: string,
   opcoes?: { prazo?: string; vagas?: number | null },
 ) {
+  const slug = await gerarSlugUnicoDeTeste(
+    "missoes",
+    { etapa_id: etapaId },
+    titulo,
+  );
   const { data, error } = await supabaseAdmin
     .from("missoes")
     .insert({
@@ -164,16 +207,17 @@ export async function criarMissaoDeTeste(
       entrega_esperada: "Entrega de teste",
       criterio_avaliacao: "Critério de teste",
       prazo: opcoes?.prazo,
+      slug,
       ...(opcoes?.vagas !== undefined ? { vagas: opcoes.vagas } : {}),
     })
-    .select("id")
+    .select("id, slug")
     .single();
 
   if (error || !data) {
     throw new Error(`Falha ao criar missão de teste: ${error?.message}`);
   }
 
-  return data.id as string;
+  return { id: data.id as string, slug: data.slug as string };
 }
 
 export async function criarDependenciaDeTeste(

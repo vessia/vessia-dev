@@ -5,21 +5,21 @@ test("professor não consegue criar duas etapas com a mesma ordem no mesmo proje
   page,
 }) => {
   const { professor } = lerUsuariosDeTeste();
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Etapas E2E ${Date.now()}`,
   );
 
   await loginViaUI(page, professor);
 
-  await page.goto(`/projetos/${projetoId}/etapas/nova`);
+  await page.goto(`/projetos/${projeto.slug}/etapas/nova`);
   await page.getByLabel("Nome").fill("Descoberta");
   await page.getByLabel("Ordem").fill("1");
   await page.getByRole("button", { name: "Salvar" }).click();
-  await page.waitForURL(`**/projetos/${projetoId}`);
+  await page.waitForURL(`**/projetos/${projeto.slug}`);
   await expect(page.getByText("Descoberta")).toBeVisible();
 
-  await page.goto(`/projetos/${projetoId}/etapas/nova`);
+  await page.goto(`/projetos/${projeto.slug}/etapas/nova`);
   await page.getByLabel("Nome").fill("PRD");
   await page.getByLabel("Ordem").fill("1");
   await page.getByRole("button", { name: "Salvar" }).click();
@@ -30,6 +30,6 @@ test("professor não consegue criar duas etapas com a mesma ordem no mesmo proje
   );
 
   // A segunda etapa não deve ter sido criada.
-  await page.goto(`/projetos/${projetoId}`);
+  await page.goto(`/projetos/${projeto.slug}`);
   await expect(page.getByText("PRD")).toHaveCount(0);
 });

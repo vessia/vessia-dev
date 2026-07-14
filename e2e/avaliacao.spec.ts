@@ -17,14 +17,14 @@ test("professor vê a pendência no dashboard e aprova a entrega", async ({
 }) => {
   const { professor, aluno } = lerUsuariosDeTeste();
 
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Avaliacao E2E ${Date.now()}`,
   );
-  const etapaId = await criarEtapaDeTeste(projetoId, "Descoberta", 1);
-  const missaoId = await criarMissaoDeTeste(etapaId, "Missão Para Avaliar");
+  const etapa = await criarEtapaDeTeste(projeto.id, "Descoberta", 1);
+  const missao = await criarMissaoDeTeste(etapa.id, "Missão Para Avaliar");
   const participacaoId = await criarParticipacaoDeTeste(
-    missaoId,
+    missao.id,
     aluno.id,
     "em_aprovacao",
   );
@@ -53,14 +53,14 @@ test("rejeitar sem feedback é bloqueado com mensagem amigável", async ({
 }) => {
   const { professor, aluno } = lerUsuariosDeTeste();
 
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Rejeicao E2E ${Date.now()}`,
   );
-  const etapaId = await criarEtapaDeTeste(projetoId, "Descoberta", 1);
-  const missaoId = await criarMissaoDeTeste(etapaId, "Missão Rejeicao");
+  const etapa = await criarEtapaDeTeste(projeto.id, "Descoberta", 1);
+  const missao = await criarMissaoDeTeste(etapa.id, "Missão Rejeicao");
   const participacaoId = await criarParticipacaoDeTeste(
-    missaoId,
+    missao.id,
     aluno.id,
     "em_aprovacao",
   );
@@ -82,14 +82,17 @@ test("rejeitar com feedback volta a participação para em_andamento", async ({
 }) => {
   const { professor, aluno } = lerUsuariosDeTeste();
 
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Rejeicao2 E2E ${Date.now()}`,
   );
-  const etapaId = await criarEtapaDeTeste(projetoId, "Descoberta", 1);
-  const missaoId = await criarMissaoDeTeste(etapaId, "Missão Rejeicao Com Feedback");
+  const etapa = await criarEtapaDeTeste(projeto.id, "Descoberta", 1);
+  const missao = await criarMissaoDeTeste(
+    etapa.id,
+    "Missão Rejeicao Com Feedback",
+  );
   const participacaoId = await criarParticipacaoDeTeste(
-    missaoId,
+    missao.id,
     aluno.id,
     "em_aprovacao",
   );
@@ -114,15 +117,17 @@ test("professor marca missão como concluída com o resumo de participações vi
 }) => {
   const { professor } = lerUsuariosDeTeste();
 
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Conclusao E2E ${Date.now()}`,
   );
-  const etapaId = await criarEtapaDeTeste(projetoId, "Descoberta", 1);
-  const missaoId = await criarMissaoDeTeste(etapaId, "Missão A Concluir");
+  const etapa = await criarEtapaDeTeste(projeto.id, "Descoberta", 1);
+  const missao = await criarMissaoDeTeste(etapa.id, "Missão A Concluir");
 
   await loginViaUI(page, professor);
-  await page.goto(`/projetos/${projetoId}/etapas/${etapaId}/missoes/${missaoId}`);
+  await page.goto(
+    `/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missao.slug}`,
+  );
 
   await expect(page.getByText(/Participações: 0 aprovada/)).toBeVisible();
   await page
@@ -134,13 +139,13 @@ test("professor marca missão como concluída com o resumo de participações vi
     page.getByRole("button", { name: "Marcar missão como concluída" }),
   ).toHaveCount(0);
 
-  const { data: missao } = await supabaseAdmin
+  const { data: missaoAtualizada } = await supabaseAdmin
     .from("missoes")
     .select("concluida_em, concluida_por")
-    .eq("id", missaoId)
+    .eq("id", missao.id)
     .single();
-  expect(missao?.concluida_em).not.toBeNull();
-  expect(missao?.concluida_por).toBe(professor.id);
+  expect(missaoAtualizada?.concluida_em).not.toBeNull();
+  expect(missaoAtualizada?.concluida_por).toBe(professor.id);
 });
 
 test("missão com prazo vencido e sem entrega aprovada aparece como atrasada", async ({
@@ -148,13 +153,13 @@ test("missão com prazo vencido e sem entrega aprovada aparece como atrasada", a
 }) => {
   const { professor } = lerUsuariosDeTeste();
 
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Atrasada E2E ${Date.now()}`,
   );
-  const etapaId = await criarEtapaDeTeste(projetoId, "Descoberta", 1);
+  const etapa = await criarEtapaDeTeste(projeto.id, "Descoberta", 1);
   const ontem = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  await criarMissaoDeTeste(etapaId, "Missão Vencida", { prazo: ontem });
+  await criarMissaoDeTeste(etapa.id, "Missão Vencida", { prazo: ontem });
 
   await loginViaUI(page, professor);
   await page.goto("/dashboard");

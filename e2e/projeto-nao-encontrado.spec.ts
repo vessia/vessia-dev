@@ -18,9 +18,7 @@ test("projeto inexistente mostra página amigável (não o 404 padrão do Next.j
   const { professor } = lerUsuariosDeTeste();
   await loginViaUI(page, professor);
 
-  const resposta = await page.goto(
-    "/projetos/00000000-0000-0000-0000-000000000000",
-  );
+  const resposta = await page.goto("/projetos/projeto-que-nao-existe");
   expect(resposta?.status()).toBe(404);
   await expect(
     page.getByText("Este projeto não foi encontrado ou você não tem acesso a ele."),
@@ -34,11 +32,11 @@ test("professor sem vínculo tentando ver etapa de outro projeto vê a mesma pá
   page,
 }) => {
   const { professor, aluno } = lerUsuariosDeTeste();
-  const projetoId = await criarProjetoDeTeste(
+  const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Sem Acesso E2E ${Date.now()}`,
   );
-  const etapaId = await criarEtapaDeTeste(projetoId, "Descoberta", 1);
+  const etapa = await criarEtapaDeTeste(projeto.id, "Descoberta", 1);
 
   try {
     // Aluno de teste não está vinculado a este projeto — RLS já barra a
@@ -46,7 +44,7 @@ test("professor sem vínculo tentando ver etapa de outro projeto vê a mesma pá
     // amigável, não em um 404 "cru" ou numa tela quebrada.
     await loginViaUI(page, aluno);
     const resposta = await page.goto(
-      `/projetos/${projetoId}/etapas/${etapaId}`,
+      `/projetos/${projeto.slug}/etapas/${etapa.slug}`,
     );
     expect(resposta?.status()).toBe(404);
     await expect(
@@ -55,6 +53,6 @@ test("professor sem vínculo tentando ver etapa de outro projeto vê a mesma pá
       ),
     ).toBeVisible();
   } finally {
-    await supabaseAdmin.from("projetos").delete().eq("id", projetoId);
+    await supabaseAdmin.from("projetos").delete().eq("id", projeto.id);
   }
 });

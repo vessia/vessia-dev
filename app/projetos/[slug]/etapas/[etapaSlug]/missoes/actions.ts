@@ -8,6 +8,8 @@ import {
   buscarGrafoDependencias,
   encontrarDependenciaCiclica,
 } from "@/lib/missoes/dependencias";
+import { gerarSlugUnico } from "@/lib/slugs/unico";
+import { buscarSlugPorId } from "@/lib/slugs/buscar";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -93,16 +95,18 @@ export async function criarMissao(formData: FormData) {
   const etapaId = String(formData.get("etapa_id") ?? "");
   const campos = lerCamposMissao(formData);
 
+  const supabase = await createClient();
+  const projetoSlug = await buscarSlugPorId(supabase, "projetos", projetoId);
+  const etapaSlug = await buscarSlugPorId(supabase, "etapas", etapaId);
+
   const erroValidacao = validarCamposMissao(campos);
   if (erroValidacao) {
     redirect(
-      `/projetos/${projetoId}/etapas/${etapaId}/missoes/nova?error=${encodeURIComponent(
+      `/projetos/${projetoSlug}/etapas/${etapaSlug}/missoes/nova?error=${encodeURIComponent(
         erroValidacao,
       )}`,
     );
   }
-
-  const supabase = await createClient();
 
   if (campos.dependencias.length > 0) {
     const grafo = await buscarGrafoDependencias(supabase, projetoId);
@@ -115,12 +119,18 @@ export async function criarMissao(formData: FormData) {
     );
     if (cicloId) {
       redirect(
-        `/projetos/${projetoId}/etapas/${etapaId}/missoes/nova?error=${encodeURIComponent(
+        `/projetos/${projetoSlug}/etapas/${etapaSlug}/missoes/nova?error=${encodeURIComponent(
           "Essa dependência criaria um ciclo entre missões.",
         )}`,
       );
     }
   }
+
+  const slug = await gerarSlugUnico(
+    "missoes",
+    { etapa_id: etapaId },
+    campos.titulo,
+  );
 
   const { data: missao, error } = await supabase
     .from("missoes")
@@ -136,13 +146,14 @@ export async function criarMissao(formData: FormData) {
       vagas: campos.vagas,
       obrigatoria: campos.obrigatoria,
       limite_reenvios: campos.limiteReenvios,
+      slug,
     })
     .select("id")
     .single();
 
   if (error || !missao) {
     redirect(
-      `/projetos/${projetoId}/etapas/${etapaId}/missoes/nova?error=${encodeURIComponent(
+      `/projetos/${projetoSlug}/etapas/${etapaSlug}/missoes/nova?error=${encodeURIComponent(
         error?.message ?? "Não foi possível criar a missão.",
       )}`,
     );
@@ -159,7 +170,7 @@ export async function criarMissao(formData: FormData) {
 
   await salvarAnexoLink(supabase, missao.id, user.id, formData);
 
-  redirect(`/projetos/${projetoId}/etapas/${etapaId}`);
+  redirect(`/projetos/${projetoSlug}/etapas/${etapaSlug}`);
 }
 
 export async function atualizarMissao(formData: FormData) {
@@ -170,16 +181,19 @@ export async function atualizarMissao(formData: FormData) {
   const missaoId = String(formData.get("id") ?? "");
   const campos = lerCamposMissao(formData);
 
+  const supabase = await createClient();
+  const projetoSlug = await buscarSlugPorId(supabase, "projetos", projetoId);
+  const etapaSlug = await buscarSlugPorId(supabase, "etapas", etapaId);
+
   const erroValidacao = validarCamposMissao(campos);
   if (erroValidacao) {
+    const missaoSlug = await buscarSlugPorId(supabase, "missoes", missaoId);
     redirect(
-      `/projetos/${projetoId}/etapas/${etapaId}/missoes/${missaoId}/editar?error=${encodeURIComponent(
+      `/projetos/${projetoSlug}/etapas/${etapaSlug}/missoes/${missaoSlug}/editar?error=${encodeURIComponent(
         erroValidacao,
       )}`,
     );
   }
-
-  const supabase = await createClient();
 
   if (campos.dependencias.length > 0) {
     const grafo = await buscarGrafoDependencias(supabase, projetoId, {
@@ -191,8 +205,9 @@ export async function atualizarMissao(formData: FormData) {
       campos.dependencias,
     );
     if (cicloId) {
+      const missaoSlug = await buscarSlugPorId(supabase, "missoes", missaoId);
       redirect(
-        `/projetos/${projetoId}/etapas/${etapaId}/missoes/${missaoId}/editar?error=${encodeURIComponent(
+        `/projetos/${projetoSlug}/etapas/${etapaSlug}/missoes/${missaoSlug}/editar?error=${encodeURIComponent(
           "Essa dependência criaria um ciclo entre missões — a missão escolhida já depende, direta ou indiretamente, desta aqui.",
         )}`,
       );
@@ -216,8 +231,9 @@ export async function atualizarMissao(formData: FormData) {
     .eq("id", missaoId);
 
   if (error) {
+    const missaoSlug = await buscarSlugPorId(supabase, "missoes", missaoId);
     redirect(
-      `/projetos/${projetoId}/etapas/${etapaId}/missoes/${missaoId}/editar?error=${encodeURIComponent(
+      `/projetos/${projetoSlug}/etapas/${etapaSlug}/missoes/${missaoSlug}/editar?error=${encodeURIComponent(
         error.message,
       )}`,
     );
@@ -236,5 +252,5 @@ export async function atualizarMissao(formData: FormData) {
 
   await salvarAnexoLink(supabase, missaoId, user.id, formData);
 
-  redirect(`/projetos/${projetoId}/etapas/${etapaId}`);
+  redirect(`/projetos/${projetoSlug}/etapas/${etapaSlug}`);
 }

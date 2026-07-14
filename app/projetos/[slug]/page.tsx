@@ -23,11 +23,11 @@ export default async function ProjetoDetalhePage({
   params,
   searchParams,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
   searchParams: Promise<{ error?: string }>;
 }) {
   const user = await requireOnboardingCompleto();
-  const { id } = await params;
+  const { slug } = await params;
   const { error } = await searchParams;
   const supabase = await createClient();
 
@@ -41,13 +41,15 @@ export default async function ProjetoDetalhePage({
 
   const { data: projeto } = await supabase
     .from("projetos")
-    .select("id, nome, descricao, cliente, status")
-    .eq("id", id)
+    .select("id, slug, nome, descricao, cliente, status")
+    .eq("slug", slug)
     .single();
 
   if (!projeto) {
     notFound();
   }
+
+  const id = projeto.id;
 
   let ehProprietario = false;
   let vinculoAluno: string | null = null;
@@ -95,20 +97,20 @@ export default async function ProjetoDetalhePage({
           {ehProfessor && (
             <>
               <Link
-                href={`/projetos/${projeto.id}/editar`}
+                href={`/projetos/${projeto.slug}/editar`}
                 className="text-sm text-blue-600 underline dark:text-blue-400"
               >
                 Editar projeto
               </Link>
               <Link
-                href={`/projetos/${projeto.id}/alunos`}
+                href={`/projetos/${projeto.slug}/alunos`}
                 className="text-sm text-blue-600 underline dark:text-blue-400"
               >
                 Alunos
               </Link>
               {ehProprietario && (
                 <Link
-                  href={`/projetos/${projeto.id}/professores`}
+                  href={`/projetos/${projeto.slug}/professores`}
                   className="text-sm text-blue-600 underline dark:text-blue-400"
                 >
                   Professores
@@ -135,11 +137,12 @@ export default async function ProjetoDetalhePage({
       ) : (
         <>
           {!ehProfessor && vinculoAluno === "aceito" && (
-            <SairDoProjetoForm projetoId={projeto.id} nomeProjeto={projeto.nome} />
+            <SairDoProjetoForm projetoId={id} nomeProjeto={projeto.nome} />
           )}
 
           <ConteudoDoProjeto
-            projetoId={projeto.id}
+            projetoId={id}
+            projetoSlug={projeto.slug}
             ehProfessor={ehProfessor}
           />
         </>
@@ -150,16 +153,18 @@ export default async function ProjetoDetalhePage({
 
 async function ConteudoDoProjeto({
   projetoId,
+  projetoSlug,
   ehProfessor,
 }: {
   projetoId: string;
+  projetoSlug: string;
   ehProfessor: boolean;
 }) {
   const supabase = await createClient();
 
   const { data: etapas } = await supabase
     .from("etapas")
-    .select("id, nome, ordem")
+    .select("id, slug, nome, ordem")
     .eq("projeto_id", projetoId)
     .order("ordem", { ascending: true });
 
@@ -190,7 +195,7 @@ async function ConteudoDoProjeto({
         </h2>
         {ehProfessor && etapasComDados.length > 0 && (
           <Link
-            href={`/projetos/${projetoId}/etapas/nova`}
+            href={`/projetos/${projetoSlug}/etapas/nova`}
             className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
           >
             Nova etapa
@@ -205,7 +210,7 @@ async function ConteudoDoProjeto({
           </p>
           {ehProfessor && (
             <Link
-              href={`/projetos/${projetoId}/etapas/nova`}
+              href={`/projetos/${projetoSlug}/etapas/nova`}
               className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
             >
               Criar a primeira etapa
@@ -225,7 +230,7 @@ async function ConteudoDoProjeto({
                     {etapa.ordem}
                   </span>
                   <Link
-                    href={`/projetos/${projetoId}/etapas/${etapa.id}`}
+                    href={`/projetos/${projetoSlug}/etapas/${etapa.slug}`}
                     className="font-medium text-zinc-900 hover:underline dark:text-zinc-50"
                   >
                     {etapa.nome}
@@ -240,7 +245,7 @@ async function ConteudoDoProjeto({
                   </span>
                   {ehProfessor && (
                     <Link
-                      href={`/projetos/${projetoId}/etapas/${etapa.id}/editar`}
+                      href={`/projetos/${projetoSlug}/etapas/${etapa.slug}/editar`}
                       className="text-blue-600 underline dark:text-blue-400"
                     >
                       Editar
@@ -307,7 +312,7 @@ async function ConteudoDoProjeto({
                         >
                           {clicavel ? (
                             <Link
-                              href={`/projetos/${projetoId}/etapas/${etapa.id}/missoes/${missao.id}`}
+                              href={`/projetos/${projetoSlug}/etapas/${etapa.slug}/missoes/${missao.slug}`}
                               className="flex flex-1 items-center gap-3 rounded-lg transition hover:bg-zinc-50 dark:hover:bg-zinc-900"
                             >
                               {conteudo}

@@ -3,6 +3,7 @@ import { calcularStatusMissao, type StatusMissao } from "./status";
 
 export type MissaoComStatus = {
   id: string;
+  slug: string;
   titulo: string;
   tipo: string;
   vagas: number | null;
@@ -22,7 +23,7 @@ export async function buscarMissoesComStatus(
 ): Promise<MissaoComStatus[]> {
   const { data: missoes } = await supabase
     .from("missoes")
-    .select("id, titulo, tipo, vagas, prazo, obrigatoria, concluida_em")
+    .select("id, slug, titulo, tipo, vagas, prazo, obrigatoria, concluida_em")
     .eq("etapa_id", etapaId)
     .order("titulo", { ascending: true });
 

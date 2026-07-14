@@ -11,10 +11,10 @@ import { CONCEITOS } from "@/lib/conceitos/textos";
 export default async function EtapaDetalhePage({
   params,
 }: {
-  params: Promise<{ id: string; etapaId: string }>;
+  params: Promise<{ slug: string; etapaSlug: string }>;
 }) {
   const user = await requireOnboardingCompleto();
-  const { id: projetoId, etapaId } = await params;
+  const { slug: projetoSlug, etapaSlug } = await params;
   const supabase = await createClient();
 
   const { data: profile } = await supabase
@@ -25,35 +25,35 @@ export default async function EtapaDetalhePage({
 
   const ehProfessor = profile?.papel === "professor";
 
-  const { data: etapa } = await supabase
-    .from("etapas")
-    .select("id, nome, ordem, projeto_id")
-    .eq("id", etapaId)
-    .eq("projeto_id", projetoId)
-    .single();
-
-  if (!etapa) {
-    notFound();
-  }
-
   const { data: projeto } = await supabase
     .from("projetos")
-    .select("id, nome")
-    .eq("id", projetoId)
+    .select("id, slug, nome")
+    .eq("slug", projetoSlug)
     .single();
 
   if (!projeto) {
     notFound();
   }
 
-  const missoesComStatus = await buscarMissoesComStatus(supabase, etapaId);
+  const { data: etapa } = await supabase
+    .from("etapas")
+    .select("id, slug, nome, ordem, projeto_id")
+    .eq("projeto_id", projeto.id)
+    .eq("slug", etapaSlug)
+    .single();
+
+  if (!etapa) {
+    notFound();
+  }
+
+  const missoesComStatus = await buscarMissoesComStatus(supabase, etapa.id);
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 p-4 sm:p-8">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            <Link href={`/projetos/${projeto.id}`} className="underline">
+            <Link href={`/projetos/${projeto.slug}`} className="underline">
               {projeto.nome}
             </Link>
           </p>
@@ -65,14 +65,14 @@ export default async function EtapaDetalhePage({
         <div className="flex gap-3">
           {ehProfessor && (
             <Link
-              href={`/projetos/${projeto.id}/etapas/${etapa.id}/editar`}
+              href={`/projetos/${projeto.slug}/etapas/${etapa.slug}/editar`}
               className="text-sm text-blue-600 underline dark:text-blue-400"
             >
               Editar etapa
             </Link>
           )}
           <Link
-            href={`/projetos/${projeto.id}`}
+            href={`/projetos/${projeto.slug}`}
             className="text-sm text-zinc-500 underline dark:text-zinc-400"
           >
             Voltar
@@ -87,7 +87,7 @@ export default async function EtapaDetalhePage({
           </h2>
           {ehProfessor && missoesComStatus.length > 0 && (
             <Link
-              href={`/projetos/${projeto.id}/etapas/${etapa.id}/missoes/nova`}
+              href={`/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/nova`}
               className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
             >
               Nova missão
@@ -102,7 +102,7 @@ export default async function EtapaDetalhePage({
             </p>
             {ehProfessor && (
               <Link
-                href={`/projetos/${projeto.id}/etapas/${etapa.id}/missoes/nova`}
+                href={`/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/nova`}
                 className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
               >
                 Criar a primeira missão
@@ -118,7 +118,10 @@ export default async function EtapaDetalhePage({
                   key={missao.id}
                   className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
                 >
-                  <div className="flex items-center gap-3">
+                  <Link
+                    href={`/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missao.slug}`}
+                    className="flex flex-1 items-center gap-3 rounded-lg transition hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                  >
                     <span className="text-lg" title={tipo.label}>
                       {tipo.icone}
                     </span>
@@ -142,13 +145,13 @@ export default async function EtapaDetalhePage({
                           : "Sem prazo"}
                       </p>
                     </div>
-                  </div>
+                  </Link>
 
                   <div className="flex items-center gap-4 text-sm">
                     <MissaoStatusBadge status={missao.status} />
                     {ehProfessor && (
                       <Link
-                        href={`/projetos/${projeto.id}/etapas/${etapa.id}/missoes/${missao.id}/editar`}
+                        href={`/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missao.slug}/editar`}
                         className="text-blue-600 underline dark:text-blue-400"
                       >
                         Editar

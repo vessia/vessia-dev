@@ -15,24 +15,26 @@ export default async function ProfessoresDoProjetoPage({
   params,
   searchParams,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
   searchParams: Promise<{ error?: string; busca?: string }>;
 }) {
-  const { id: projetoId } = await params;
-  // Modelo Conceitual §3.1: só o proprietário gerencia professores.
-  await requireProprietarioDoProjeto(projetoId);
-  const { error, busca } = await searchParams;
+  const { slug } = await params;
   const supabase = await createClient();
 
   const { data: projeto } = await supabase
     .from("projetos")
     .select("id, nome")
-    .eq("id", projetoId)
+    .eq("slug", slug)
     .single();
 
   if (!projeto) {
     notFound();
   }
+
+  const projetoId = projeto.id;
+  // Modelo Conceitual §3.1: só o proprietário gerencia professores.
+  await requireProprietarioDoProjeto(projetoId);
+  const { error, busca } = await searchParams;
 
   const professores = await buscarProfessoresDoProjeto(supabase, projetoId);
   const termoBusca = busca?.trim();
@@ -51,7 +53,7 @@ export default async function ProfessoresDoProjetoPage({
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 p-4 sm:p-8">
       <div>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          <Link href={`/projetos/${projetoId}`} className="underline">
+          <Link href={`/projetos/${slug}`} className="underline">
             {projeto.nome}
           </Link>
         </p>

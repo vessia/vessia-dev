@@ -5,6 +5,7 @@ import { requireProprietarioDoProjeto } from "@/lib/projetos/dal";
 import {
   buscarProfessoresDoProjeto,
   buscarUsuariosPorNome,
+  pareceEmailInvalido,
 } from "@/lib/projetos/vinculos";
 import { Banner, Card, Field, inputClass } from "@/app/_components/ui";
 import { SubmitButton } from "@/app/_components/submit-button";
@@ -35,14 +36,16 @@ export default async function ProfessoresDoProjetoPage({
 
   const professores = await buscarProfessoresDoProjeto(supabase, projetoId);
   const termoBusca = busca?.trim();
-  const resultados = termoBusca
-    ? await buscarUsuariosPorNome(
-        supabase,
-        "professor",
-        termoBusca,
-        professores.map((p) => p.professorId),
-      )
-    : [];
+  const termoInvalido = termoBusca ? pareceEmailInvalido(termoBusca) : false;
+  const resultados =
+    termoBusca && !termoInvalido
+      ? await buscarUsuariosPorNome(
+          supabase,
+          "professor",
+          termoBusca,
+          professores.map((p) => p.professorId),
+        )
+      : [];
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 p-4 sm:p-8">
@@ -116,7 +119,14 @@ export default async function ProfessoresDoProjetoPage({
 
         {termoBusca && (
           <ul className="mt-4 flex flex-col gap-2 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-            {resultados.length === 0 ? (
+            {termoInvalido ? (
+              <p
+                data-testid="banner-error"
+                className="text-sm text-red-600 dark:text-red-400"
+              >
+                Formato de e-mail inválido.
+              </p>
+            ) : resultados.length === 0 ? (
               <p className="text-sm text-zinc-500 dark:text-zinc-400">
                 Nenhum professor encontrado.
               </p>

@@ -118,6 +118,16 @@ export async function buscarConvitesPendentes(
   }));
 }
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// O campo de busca aceita nome OU e-mail no mesmo input — se o termo tem
+// "@" mas não parece um e-mail válido, vale avisar isso explicitamente em
+// vez de só dizer "nenhum resultado encontrado" (preparação pré-lançamento
+// pra alunos reais — busca por e-mail precisa de mensagens de erro claras).
+export function pareceEmailInvalido(termo: string): boolean {
+  return termo.includes("@") && !EMAIL_REGEX.test(termo);
+}
+
 // Busca por nome OU e-mail, para os fluxos de "adicionar colaborador" /
 // "atribuir aluno" (DECISIONS.md: "Busca de aluno/professor por e-mail, não
 // só nome" — nome sozinho é ambíguo). Duas queries separadas (em vez de

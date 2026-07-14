@@ -218,6 +218,29 @@ test("professor busca colaborador por e-mail (não só nome) e consegue adiciona
   }
 });
 
+test("busca por e-mail em formato inválido mostra mensagem clara, sem tentar buscar", async ({
+  page,
+}) => {
+  const { professor } = lerUsuariosDeTeste();
+  const projetoId = await criarProjetoDeTeste(
+    professor.id,
+    `Projeto Email Invalido E2E ${Date.now()}`,
+  );
+
+  try {
+    await loginViaUI(page, professor);
+    await page.goto(`/projetos/${projetoId}/alunos`);
+    await page.getByLabel("Buscar aluno por nome ou e-mail").fill("aluno@semdominio");
+    await page.getByRole("button", { name: "Buscar" }).click();
+
+    await expect(page.getByTestId("banner-error")).toContainText(
+      "Formato de e-mail inválido",
+    );
+  } finally {
+    await supabaseAdmin.from("projetos").delete().eq("id", projetoId);
+  }
+});
+
 test("aluno recusa o convite e vê mensagem informativa na página do projeto", async ({
   page,
 }) => {

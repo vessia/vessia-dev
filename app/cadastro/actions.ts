@@ -73,7 +73,7 @@ export async function cadastrar(formData: FormData) {
   if (!data.session) {
     redirect(
       `/login?message=${encodeURIComponent(
-        "Cadastro realizado! Verifique seu e-mail para confirmar a conta antes de entrar.",
+        "Cadastro realizado! Verifique seu e-mail para confirmar a conta antes de entrar (se não encontrar, olhe também a caixa de spam).",
       )}`,
     );
   }

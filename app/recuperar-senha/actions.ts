@@ -24,7 +24,7 @@ export async function solicitarRecuperacaoSenha(formData: FormData) {
   // cadastrado (mesmo raciocínio já aplicado no fluxo de cadastro).
   redirect(
     `/recuperar-senha?message=${encodeURIComponent(
-      "Se esse e-mail estiver cadastrado, você vai receber um link para redefinir sua senha em instantes.",
+      "Se esse e-mail estiver cadastrado, você vai receber um link para redefinir sua senha em instantes. Se não encontrar, olhe também a caixa de spam.",
     )}`,
   );
 }

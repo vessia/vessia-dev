@@ -10,7 +10,7 @@ import {
 } from "@/lib/projetos/vinculos";
 import { Banner, Card, Field, inputClass } from "@/app/_components/ui";
 import { SubmitButton } from "@/app/_components/submit-button";
-import { atribuirAluno, removerAluno } from "./actions";
+import { atribuirAluno, convidarPorEmail, removerAluno } from "./actions";
 
 const STATUS_LABEL: Record<StatusAtribuicaoAluno, string> = {
   convidado: "Convidado (aguardando resposta)",
@@ -35,7 +35,7 @@ export default async function AlunosDoProjetoPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ error?: string; busca?: string }>;
+  searchParams: Promise<{ error?: string; message?: string; busca?: string }>;
 }) {
   const { slug } = await params;
   const supabase = await createClient();
@@ -54,7 +54,7 @@ export default async function AlunosDoProjetoPage({
   // 05 - Fluxos.md §2.1: qualquer professor vinculado (proprietário ou
   // colaborador) pode atribuir/gerenciar alunos.
   await requireProfessorDoProjeto(projetoId);
-  const { error, busca } = await searchParams;
+  const { error, message, busca } = await searchParams;
 
   const alunos = await buscarAlunosDoProjeto(supabase, projetoId);
   const termoBusca = busca?.trim();
@@ -83,6 +83,7 @@ export default async function AlunosDoProjetoPage({
       </div>
 
       {error && <Banner variant="error">{error}</Banner>}
+      {message && <Banner variant="info">{message}</Banner>}
 
       <Card>
         {alunos.length === 0 ? (
@@ -135,6 +136,23 @@ export default async function AlunosDoProjetoPage({
             ))}
           </ul>
         )}
+      </Card>
+
+      <Card>
+        <form action={convidarPorEmail} className="flex flex-col gap-3">
+          <input type="hidden" name="projeto_id" value={projetoId} />
+          <Field label="Convidar por e-mail">
+            <input type="email" name="email" required className={inputClass} />
+          </Field>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+            Se já existe conta de aluno com esse e-mail, o vínculo é criado na
+            hora. Se não existe, o convite é aplicado automaticamente assim
+            que essa pessoa se cadastrar.
+          </p>
+          <SubmitButton pendingText="Convidando..." className="w-fit">
+            Convidar
+          </SubmitButton>
+        </form>
       </Card>
 
       <Card>

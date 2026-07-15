@@ -70,6 +70,8 @@ export async function cadastrar(formData: FormData) {
     );
   }
 
+  await resolverConvitesPendentes(admin, email, data.user!.id);
+
   if (!data.session) {
     redirect(
       `/login?message=${encodeURIComponent(
@@ -79,4 +81,34 @@ export async function cadastrar(formData: FormData) {
   }
 
   redirect("/dashboard");
+}
+
+// DECISIONS.md, "Convite por e-mail para aluno não cadastrado ainda": todo
+// convite pendente (em qualquer projeto) para o e-mail recém-cadastrado
+// vira vínculo em projeto_alunos, igual a uma atribuição normal — o aluno
+// segue vendo e respondendo (aceitar/recusar) exatamente como já funciona.
+async function resolverConvitesPendentes(
+  admin: ReturnType<typeof createAdminClient>,
+  email: string,
+  alunoId: string,
+) {
+  const { data: convites } = await admin
+    .from("convites_email_pendentes")
+    .select("id, projeto_id, convidado_por")
+    .ilike("email", email)
+    .is("resolvido_em", null);
+
+  for (const convite of convites ?? []) {
+    await admin.from("projeto_alunos").insert({
+      projeto_id: convite.projeto_id,
+      aluno_id: alunoId,
+      status: "convidado",
+      atribuido_por: convite.convidado_por,
+    });
+
+    await admin
+      .from("convites_email_pendentes")
+      .update({ resolvido_em: new Date().toISOString() })
+      .eq("id", convite.id);
+  }
 }

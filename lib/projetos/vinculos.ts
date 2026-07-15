@@ -128,6 +128,71 @@ export function pareceEmailInvalido(termo: string): boolean {
   return termo.includes("@") && !EMAIL_REGEX.test(termo);
 }
 
+// Usado pelo campo de "convidar por e-mail" (DECISIONS.md: "Convite por
+// e-mail para aluno não cadastrado ainda") — aqui o campo é só e-mail, não
+// nome-ou-e-mail, então a validação é estrita (não basta "não parecer
+// inválido", precisa parecer válido).
+export function emailValido(termo: string): boolean {
+  return EMAIL_REGEX.test(termo);
+}
+
+// Cria ou reconvida um aluno num projeto — lógica compartilhada entre
+// atribuir por busca (nome/e-mail de conta já existente) e convidar por
+// e-mail (DECISIONS.md: "Professor pode reconvidar aluno..." — quem já
+// saiu, foi removido ou recusou reabre a mesma linha em vez de inserir uma
+// nova, que colidiria com a chave primária projeto_id+aluno_id).
+export async function atribuirOuReconvidarAluno(
+  supabase: SupabaseClient,
+  projetoId: string,
+  alunoId: string,
+  atribuidoPor: string,
+): Promise<{ error: string | null }> {
+  const { data: atual } = await supabase
+    .from("projeto_alunos")
+    .select("status")
+    .eq("projeto_id", projetoId)
+    .eq("aluno_id", alunoId)
+    .maybeSingle();
+
+  if (
+    atual &&
+    (atual.status === "saiu" ||
+      atual.status === "removido" ||
+      atual.status === "recusado")
+  ) {
+    const { error } = await supabase
+      .from("projeto_alunos")
+      .update({
+        status: "convidado",
+        atribuido_por: atribuidoPor,
+        atribuido_em: new Date().toISOString(),
+        respondido_em: null,
+      })
+      .eq("projeto_id", projetoId)
+      .eq("aluno_id", alunoId);
+
+    return { error: error?.message ?? null };
+  }
+
+  const { error } = await supabase.from("projeto_alunos").insert({
+    projeto_id: projetoId,
+    aluno_id: alunoId,
+    status: "convidado",
+    atribuido_por: atribuidoPor,
+  });
+
+  if (error) {
+    return {
+      error:
+        error.code === "23505"
+          ? "Esse aluno já foi atribuído a este projeto."
+          : error.message,
+    };
+  }
+
+  return { error: null };
+}
+
 // Busca por nome OU e-mail, para os fluxos de "adicionar colaborador" /
 // "atribuir aluno" (DECISIONS.md: "Busca de aluno/professor por e-mail, não
 // só nome" — nome sozinho é ambíguo). Duas queries separadas (em vez de

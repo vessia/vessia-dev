@@ -63,6 +63,21 @@ async function buscarMissoesDoProfessor(supabase: SupabaseClient) {
   };
 }
 
+// DECISIONS.md, "Retoque visual no Início": card de resumo "Projetos
+// ativos" no topo do dashboard do professor. RLS de "projetos: leitura por
+// quem está vinculado" já escopa a contagem pro professor logado (mesmo
+// padrão de buscarMissoesDoProfessor).
+export async function contarProjetosAtivos(
+  supabase: SupabaseClient,
+): Promise<number> {
+  const { count } = await supabase
+    .from("projetos")
+    .select("*", { count: "exact", head: true })
+    .eq("status", "ativo");
+
+  return count ?? 0;
+}
+
 // Dashboard do professor (Bloco 9, tarefa 26): entregas pendentes de
 // avaliação (Participação em_aprovacao) entre todos os projetos ativos.
 export async function buscarPendenciasAvaliacao(

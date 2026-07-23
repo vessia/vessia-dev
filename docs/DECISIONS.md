@@ -345,3 +345,10 @@ Log de decisões de produto e engenharia, no formato Contexto / Decisão / Conse
 **Contexto:** problema real e sério — o aceite do termo estava embutido no fluxo de participar da primeira missão, e pelo menos um aluno confundiu o botão de aceite com o de enviar entrega, resultando em envio indevido. Ver `05 - Fluxos.md`, caso de uso atualizado.
 **Decisão:** o aceite do termo específico do projeto passa a ser um gate completo e isolado — uma tela própria, sem nenhum outro elemento de interface, mostrada assim que o aluno acessa o projeto pela primeira vez (antes de ver qualquer Etapa ou Missão), não mais atrelado à tentativa de participar de uma missão específica.
 **Consequência:** nenhuma mudança de modelo (`termo_aceito_em` continua sendo o mesmo campo) — muda só onde e quando a tela aparece. Entregas indevidas já enviadas por confusão (se houver) precisam ser identificadas e tratadas manualmente por enquanto — não existe mecanismo de "desfazer entrega" no sistema.
+
+---
+
+### 2026-07 — Retoque visual no Início
+**Contexto:** a tela de Início (dashboard) do professor era só duas listas de texto corrido, sem noção de volume à primeira vista; a do aluno era só "Olá, {nome}", sem informação nenhuma.
+**Decisão:** puramente estético, nenhum dado novo, nenhuma lógica muda. Professor ganha uma linha de 3 cards de resumo no topo (Projetos ativos, Pendências de avaliação, Atrasadas — reaproveitando dados que a página já buscava) e mais respiro visual + um ícone por item nas duas listas abaixo. Aluno ganha um resumo simples (Projetos ativos, Missões disponíveis — somadas entre todos os projetos ativos onde ele está aceito) ou, se ainda não tiver nenhum vínculo de projeto, uma mensagem amigável no lugar da tela vazia. Ambos reaproveitam o componente `Card` já existente, sem paleta/fonte nova.
+**Consequência:** dois novos exports em `lib/dashboard/` (`contarProjetosAtivos`, `buscarResumoAluno`) — o segundo reaproveita `buscarMissoesComStatus` (mesma fonte de status usada no mapa do projeto) em vez de recalcular a regra de disponibilidade. Nenhuma migration, nenhuma rota nova.

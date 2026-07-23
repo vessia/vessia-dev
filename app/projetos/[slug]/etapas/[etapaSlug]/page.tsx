@@ -7,6 +7,7 @@ import { tipoMissaoInfo } from "@/lib/missoes/constantes";
 import { buscarMissoesComStatus } from "@/lib/missoes/buscar";
 import { Tooltip } from "@/app/_components/tooltip";
 import { CONCEITOS } from "@/lib/conceitos/textos";
+import { requireTermoAceito } from "@/lib/projetos/dal";
 
 export default async function EtapaDetalhePage({
   params,
@@ -44,6 +45,15 @@ export default async function EtapaDetalhePage({
 
   if (!etapa) {
     notFound();
+  }
+
+  // DECISIONS.md, "Aceite do termo específico vira gate de projeto":
+  // checado assim que o aluno acessa qualquer Etapa diretamente (deep
+  // link), não só pelo mapa do projeto. RLS de `etapas` já garante que só
+  // aluno com vínculo 'aceito' chega até aqui (senão a query acima teria
+  // retornado nula), então não precisa checar o status de novo.
+  if (!ehProfessor) {
+    await requireTermoAceito(user.id, projeto.id, projeto.slug);
   }
 
   const missoesComStatus = await buscarMissoesComStatus(supabase, etapa.id);
@@ -116,11 +126,15 @@ export default async function EtapaDetalhePage({
               return (
                 <li
                   key={missao.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+                  className="relative flex flex-wrap items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
                 >
+                  {/* Stretched link (DECISIONS.md, "Cards inteiros
+                      clicáveis"): cobre o card inteiro; "Editar" abaixo
+                      fica "relative z-10" pra continuar navegando pro
+                      próprio destino, não pro da missão. */}
                   <Link
                     href={`/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missao.slug}`}
-                    className="flex flex-1 items-center gap-3 rounded-lg transition hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                    className="flex flex-1 items-center gap-3 rounded-lg transition after:absolute after:inset-0 hover:bg-zinc-50 dark:hover:bg-zinc-900"
                   >
                     <span className="text-lg" title={tipo.label}>
                       {tipo.icone}
@@ -147,7 +161,7 @@ export default async function EtapaDetalhePage({
                     </div>
                   </Link>
 
-                  <div className="flex items-center gap-4 text-sm">
+                  <div className="relative z-10 flex items-center gap-4 text-sm">
                     <MissaoStatusBadge status={missao.status} />
                     {ehProfessor && (
                       <Link

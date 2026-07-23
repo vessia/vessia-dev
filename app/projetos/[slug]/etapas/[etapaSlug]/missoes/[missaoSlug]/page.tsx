@@ -11,13 +11,8 @@ import { buscarDependenciasComStatus } from "@/lib/missoes/buscar";
 import { calcularStatusMissao } from "@/lib/missoes/status";
 import { buscarParticipacoesComResultado } from "@/lib/participacoes/buscar";
 import { resumirParticipacoes } from "@/lib/participacoes/resumo";
-import { precisaAceitarTermoEspecifico } from "@/lib/participacoes/validacoes";
-import {
-  participar,
-  enviarEntrega,
-  marcarConcluida,
-  aceitarTermoProjeto,
-} from "./actions";
+import { requireTermoAceito } from "@/lib/projetos/dal";
+import { participar, enviarEntrega, marcarConcluida } from "./actions";
 import { EntregaForm } from "./entrega-form";
 
 export default async function MissaoDetalhePage({
@@ -43,7 +38,7 @@ export default async function MissaoDetalhePage({
 
   const { data: projeto } = await supabase
     .from("projetos")
-    .select("id, termo_especifico")
+    .select("id, slug")
     .eq("slug", projetoSlug)
     .single();
 
@@ -77,6 +72,16 @@ export default async function MissaoDetalhePage({
 
   if (!missao) {
     notFound();
+  }
+
+  // DECISIONS.md, "Aceite do termo específico vira gate de projeto":
+  // checado assim que o aluno acessa uma Missão diretamente (deep link),
+  // antes de ver qualquer conteúdo dela — não mais atrelado à tentativa de
+  // participar desta missão específica. RLS de `missoes` já garante que só
+  // aluno com vínculo 'aceito' chega até aqui (senão a query acima teria
+  // retornado nula).
+  if (ehAluno) {
+    await requireTermoAceito(user.id, projetoId, projeto.slug);
   }
 
   const dependencias = await buscarDependenciasComStatus(supabase, missao.id);
@@ -132,26 +137,6 @@ export default async function MissaoDetalhePage({
     podeParticiparAgora &&
     missao.vagas !== null &&
     (vagasPreenchidas ?? 0) >= missao.vagas;
-
-  // DECISIONS.md, "Termo específico por Projeto": só entra em jogo quando o
-  // projeto define um termo — aceite é por projeto, então vale pra qualquer
-  // missão dele, não só esta.
-  let termoPendente = false;
-  const termoEspecifico = projeto.termo_especifico;
-
-  if (podeParticiparAgora) {
-    const { data: vinculoAluno } = await supabase
-      .from("projeto_alunos")
-      .select("termo_aceito_em")
-      .eq("projeto_id", projetoId)
-      .eq("aluno_id", user.id)
-      .maybeSingle();
-
-    termoPendente = precisaAceitarTermoEspecifico({
-      termoEspecifico,
-      termoAceitoEm: vinculoAluno?.termo_aceito_em ?? null,
-    });
-  }
 
   // Contexto pra decisão manual de "marcar como concluída" (professor).
   let resumoParticipacoes = null;
@@ -310,26 +295,12 @@ export default async function MissaoDetalhePage({
         </div>
 
         {/* Estado da Participação do aluno logado — só um bloco de ação
-            por vez, de acordo com onde ele está no fluxo. */}
+            por vez, de acordo com onde ele está no fluxo. Aceite do termo
+            específico já foi resolvido antes de chegar aqui (gate de
+            projeto, DECISIONS.md), então não há mais um terceiro estado
+            pra tratar. */}
         {podeParticiparAgora &&
-          (termoPendente ? (
-            <div className="flex flex-col gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/40">
-              <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                Termo específico deste projeto
-              </p>
-              <p className="text-sm whitespace-pre-wrap text-amber-800 dark:text-amber-200">
-                {termoEspecifico}
-              </p>
-              <form action={aceitarTermoProjeto} className="w-fit">
-                <input type="hidden" name="projeto_id" value={projetoId} />
-                <input type="hidden" name="etapa_id" value={etapaId} />
-                <input type="hidden" name="missao_id" value={missao.id} />
-                <SubmitButton pendingText="Registrando...">
-                  Li e concordo
-                </SubmitButton>
-              </form>
-            </div>
-          ) : vagasEsgotadas ? (
+          (vagasEsgotadas ? (
             <p className="mt-2 w-fit rounded-full bg-zinc-100 px-4 py-2 text-sm text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
               🚫 Vagas esgotadas.
             </p>

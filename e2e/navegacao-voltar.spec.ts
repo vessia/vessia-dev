@@ -7,9 +7,13 @@ import {
   loginViaUI,
 } from "./helpers";
 
-// Investigação do relato: aluno na tela da missão (antes de aceitar o termo
-// específico), aperta voltar do navegador, e a missão que era clicável no
-// mapa do projeto para de responder a clique.
+// Investigação do relato original: aluno na tela da missão, aperta voltar
+// do navegador, e a missão que era clicável no mapa do projeto para de
+// responder a clique. O repro original usava um projeto com termo
+// específico pendente (só porque foi o cenário em que apareceu), mas o
+// bug em si é sobre cache de navegação "voltar", sem relação com termo —
+// desde que o aceite do termo virou gate de projeto (DECISIONS.md), não dá
+// mais pra chegar no mapa com termo pendente, então o teste não usa mais.
 test("missão continua clicável no mapa do projeto depois do botão voltar do navegador", async ({
   page,
 }) => {
@@ -18,10 +22,7 @@ test("missão continua clicável no mapa do projeto depois do botão voltar do n
   const projeto = await criarProjetoDeTeste(
     professor.id,
     `Projeto Voltar E2E ${Date.now()}`,
-    {
-      alunoAceitoId: aluno.id,
-      termoEspecifico: "Termo específico de teste — aceite obrigatório antes de participar.",
-    },
+    { alunoAceitoId: aluno.id },
   );
   const etapa = await criarEtapaDeTeste(projeto.id, "Descoberta", 1);
   const missao = await criarMissaoDeTeste(etapa.id, "Missão Voltar E2E");
@@ -36,7 +37,7 @@ test("missão continua clicável no mapa do projeto depois do botão voltar do n
   await expect(page).toHaveURL(
     `/projetos/${projeto.slug}/etapas/${etapa.slug}/missoes/${missao.slug}`,
   );
-  await expect(page.getByText("Termo específico deste projeto")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Participar" })).toBeVisible();
 
   await page.goBack();
   await expect(page).toHaveURL(`/projetos/${projeto.slug}`);

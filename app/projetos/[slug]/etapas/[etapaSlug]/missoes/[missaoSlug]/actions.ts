@@ -115,30 +115,6 @@ export async function participar(formData: FormData) {
   redirect(destino);
 }
 
-export async function aceitarTermoProjeto(formData: FormData) {
-  const user = await requireAluno();
-
-  const projetoId = String(formData.get("projeto_id") ?? "");
-  const etapaId = String(formData.get("etapa_id") ?? "");
-  const missaoId = String(formData.get("missao_id") ?? "");
-  const supabase = await createClient();
-  const destino = await caminhoMissao(supabase, projetoId, etapaId, missaoId);
-
-  // Aceite é por projeto, não por missão (DECISIONS.md) — grava direto em
-  // projeto_alunos, sem precisar saber qual missão trouxe o aluno até aqui.
-  const { error } = await supabase
-    .from("projeto_alunos")
-    .update({ termo_aceito_em: new Date().toISOString() })
-    .eq("projeto_id", projetoId)
-    .eq("aluno_id", user.id);
-
-  if (error) {
-    redirect(`${destino}?error=${encodeURIComponent(error.message)}`);
-  }
-
-  redirect(destino);
-}
-
 export async function marcarConcluida(formData: FormData) {
   const user = await requireProfessor();
 

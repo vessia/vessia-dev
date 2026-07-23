@@ -2,6 +2,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireProfessor } from "@/lib/auth/dal";
+import { precisaAceitarTermoEspecifico } from "@/lib/participacoes/validacoes";
 
 // Exige professor + vínculo como proprietário desse projeto específico.
 // Usado na tela de gestão de professores (Modelo Conceitual §3.1: só o
@@ -48,4 +49,39 @@ export async function requireProfessorDoProjeto(projetoId: string) {
   }
 
   return user;
+}
+
+// DECISIONS.md, "Aceite do termo específico vira gate de projeto, não
+// embutido numa missão": gate isolado, checado assim que o aluno acessa
+// qualquer conteúdo do projeto (mapa, etapa ou missão) — não mais atrelado
+// à tentativa de participar de uma missão específica. Chamado só para
+// aluno com vínculo 'aceito' (professor nunca passa por aqui).
+export async function requireTermoAceito(
+  alunoId: string,
+  projetoId: string,
+  projetoSlug: string,
+) {
+  const supabase = await createClient();
+
+  const { data: projeto } = await supabase
+    .from("projetos")
+    .select("termo_especifico")
+    .eq("id", projetoId)
+    .single();
+
+  const { data: vinculo } = await supabase
+    .from("projeto_alunos")
+    .select("termo_aceito_em")
+    .eq("projeto_id", projetoId)
+    .eq("aluno_id", alunoId)
+    .maybeSingle();
+
+  const pendente = precisaAceitarTermoEspecifico({
+    termoEspecifico: projeto?.termo_especifico ?? null,
+    termoAceitoEm: vinculo?.termo_aceito_em ?? null,
+  });
+
+  if (pendente) {
+    redirect(`/projetos/${projetoSlug}/aceitar-termo`);
+  }
 }

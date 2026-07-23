@@ -171,17 +171,21 @@ Nova missão desbloqueada aparece no mapa
 
 ### Caso de uso: Aluno aceita o termo específico do Projeto
 
-1. Aluno com convite aceito tenta participar de uma missão do projeto pela primeira vez.
+1. Aluno com convite aceito acessa o projeto pela primeira vez (antes de ver qualquer 
+   Etapa ou Missão, não no momento de participar de uma missão específica — ficou provado 
+   na prática que embutir isso dentro do fluxo de uma missão confunde o aluno com o 
+   próprio conteúdo da missão).
 2. Sistema verifica: o Projeto tem `termo_especifico` definido?
-   - Não → segue normalmente, nenhum passo extra.
+   - Não → segue normalmente, nenhum passo extra, vê o mapa do projeto direto.
    - Sim → verifica se `termo_aceito_em` já está preenchido para esse aluno naquele projeto.
      - Já aceito → segue normalmente.
-     - Ainda não aceito → mostra o texto do termo e exige aceite explícito antes de 
-       prosseguir; ao aceitar, preenche `termo_aceito_em` e só então permite criar 
-       a Participação.
-3. Aceitar o convite do projeto e aceitar o termo específico são ações distintas — o 
-   aluno pode ver do que se trata o projeto sem precisar concordar de imediato com as 
-   condições específicas dele.
+     - Ainda não aceito → tela dedicada e isolada, só com o texto do termo e um botão 
+       "Li e concordo" — nenhum outro elemento de interface (nada de formulário de 
+       entrega, nada que possa ser confundido com a ação de aceitar). Só depois de 
+       aceitar, o aluno vê o mapa do projeto.
+3. Aceitar o convite do projeto e aceitar o termo específico continuam sendo ações 
+   distintas — mas agora ambas acontecem antes de qualquer conteúdo de missão, não 
+   misturadas com ele.
 
 ---
 

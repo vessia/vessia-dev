@@ -9,6 +9,7 @@ import { buscarMissoesComStatus } from "@/lib/missoes/buscar";
 import { calcularProgressoEtapa } from "@/lib/etapas/progresso";
 import { tipoMissaoInfo } from "@/lib/missoes/constantes";
 import { buscarVinculoAlunoNoProjeto } from "@/lib/projetos/vinculos";
+import { requireTermoAceito } from "@/lib/projetos/dal";
 import { SairDoProjetoForm } from "./sair-do-projeto-form";
 
 const MENSAGEM_POR_STATUS: Record<string, string> = {
@@ -64,6 +65,13 @@ export default async function ProjetoDetalhePage({
     ehProprietario = vinculo?.papel_no_projeto === "proprietario";
   } else {
     vinculoAluno = await buscarVinculoAlunoNoProjeto(supabase, id, user.id);
+
+    // DECISIONS.md, "Aceite do termo específico vira gate de projeto":
+    // checado assim que o aluno acessa o mapa do projeto, antes de ver
+    // qualquer Etapa/Missão — não mais atrelado a uma missão específica.
+    if (vinculoAluno === "aceito") {
+      await requireTermoAceito(user.id, id, projeto.slug);
+    }
   }
 
   // 04 - Modelo Conceitual.md §3.2: aluno só enxerga etapas/missões do
@@ -222,16 +230,21 @@ async function ConteudoDoProjeto({
           {etapasComDados.map((etapa) => (
             <li
               key={etapa.id}
-              className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+              className="relative flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-sm font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
                     {etapa.ordem}
                   </span>
+                  {/* Stretched link (DECISIONS.md, "Cards inteiros
+                      clicáveis"): cobre o card inteiro; a lista de missões
+                      do aluno e o link "Editar" abaixo ficam "relative z-10"
+                      pra continuarem navegando pro destino próprio deles,
+                      não pro da etapa. */}
                   <Link
                     href={`/projetos/${projetoSlug}/etapas/${etapa.slug}`}
-                    className="font-medium text-zinc-900 hover:underline dark:text-zinc-50"
+                    className="font-medium text-zinc-900 hover:underline after:absolute after:inset-0 dark:text-zinc-50"
                   >
                     {etapa.nome}
                   </Link>
@@ -246,7 +259,7 @@ async function ConteudoDoProjeto({
                   {ehProfessor && (
                     <Link
                       href={`/projetos/${projetoSlug}/etapas/${etapa.slug}/editar`}
-                      className="text-blue-600 underline dark:text-blue-400"
+                      className="relative z-10 text-blue-600 underline dark:text-blue-400"
                     >
                       Editar
                     </Link>
@@ -268,7 +281,7 @@ async function ConteudoDoProjeto({
                   página da própria etapa, então não repetimos a lista
                   aqui pra não duplicar a mesma ação em dois lugares. */}
               {!ehProfessor && (
-                <ul className="flex flex-col gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
+                <ul className="relative z-10 flex flex-col gap-2 border-t border-zinc-100 pt-3 dark:border-zinc-800">
                   {etapa.missoes.length === 0 ? (
                     <p className="text-sm text-zinc-400 dark:text-zinc-500">
                       Nenhuma missão nesta etapa ainda.
@@ -308,12 +321,12 @@ async function ConteudoDoProjeto({
                       return (
                         <li
                           key={missao.id}
-                          className="flex items-center gap-3 rounded-lg px-2 py-1.5"
+                          className="relative flex items-center gap-3 rounded-lg px-2 py-1.5"
                         >
                           {clicavel ? (
                             <Link
                               href={`/projetos/${projetoSlug}/etapas/${etapa.slug}/missoes/${missao.slug}`}
-                              className="flex flex-1 items-center gap-3 rounded-lg transition hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                              className="flex flex-1 items-center gap-3 rounded-lg transition after:absolute after:inset-0 hover:bg-zinc-50 dark:hover:bg-zinc-900"
                             >
                               {conteudo}
                             </Link>

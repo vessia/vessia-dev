@@ -121,12 +121,16 @@ export default async function ProjetosPage({
             return (
               <li
                 key={projeto.id}
-                className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
+                className="relative flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
               >
                 <div className="flex items-start justify-between gap-2">
+                  {/* Stretched link (DECISIONS.md, "Cards inteiros
+                      clicáveis"): after:inset-0 estica a área clicável pro
+                      card inteiro; ações internas (Editar/Encerrar) ficam
+                      "relative z-10" pra continuarem clicáveis por cima. */}
                   <Link
                     href={`/projetos/${projeto.slug}`}
-                    className="font-medium text-zinc-900 hover:underline dark:text-zinc-50"
+                    className="font-medium text-zinc-900 hover:underline after:absolute after:inset-0 dark:text-zinc-50"
                   >
                     {projeto.nome}
                   </Link>
@@ -150,7 +154,7 @@ export default async function ProjetosPage({
                 </p>
 
                 {ehProfessor && (
-                  <div className="mt-1 flex items-center gap-4 border-t border-zinc-100 pt-3 text-sm dark:border-zinc-800">
+                  <div className="relative z-10 mt-1 flex items-center gap-4 border-t border-zinc-100 pt-3 text-sm dark:border-zinc-800">
                     <Link
                       href={`/projetos/${projeto.slug}/editar`}
                       className="text-blue-600 underline dark:text-blue-400"

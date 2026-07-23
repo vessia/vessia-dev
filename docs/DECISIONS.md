@@ -244,9 +244,9 @@ Log de decisões de produto e engenharia, no formato Contexto / Decisão / Conse
 ---
 
 ### 2026-07 — URL amigável (slug) por Projeto, Etapa e Missão — implementada
-**Contexto:** essa ideia tinha sido adiada por ser a mudança mais cara da lista (toca todas as rotas aninhadas de projeto) para um ganho até então puramente estético. Com o resto da lista resolvido e a navegação por UUID incomodando na prática, o custo passou a valer a pena.
-**Decisão:** `projetos`, `etapas` e `missoes` ganham uma coluna `slug` (migration `015_slugs.sql`), única globalmente para projeto e escopada ao pai para etapa/missão. Gerado uma única vez na criação (minúsculas, sem acento, espaço/pontuação vira hífen — `lib/slugs/gerar.ts`), com colisão resolvida por sufixo numérico (`lib/slugs/unico.ts`). Não é regenerado ao renomear — o slug de criação é definitivo. As rotas `/projetos/[id]/...` viram `/projetos/[slug]/etapas/[etapaSlug]/missoes/[missaoSlug]`; cada página resolve slug → id logo no início e o resto do código continua usando o id interno, sem mudança. Sem compatibilidade com links antigos por UUID — não havia alunos reais usando o sistema ainda.
-**Consequência:** URLs legíveis (`/projetos/biblia-3d/etapas/descoberta`). Toda a suíte de testes e2e que navega por URL precisou trocar UUID por slug.
+**Contexto:** essa ideia foi adiada duas vezes por falta de caso de uso concreto e por ser a mudança mais cara da lista. Na terceira vez que Caio trouxe o assunto, ficou claro que é uma prioridade real dele, não uma curiosidade passageira — decidiu fazer agora, antes de abrir para os alunos.
+**Decisão:** adicionar `slug` (único) a Projeto e Etapa (único por projeto) e Missão (único por etapa), gerado a partir do nome no momento da criação, com tratamento de colisão (sufixo numérico). **A chave primária (`id`, uuid) de cada entidade não muda** — continua sendo o que todo relacionamento interno (foreign keys, RLS) usa. O slug é só uma chave de busca alternativa, usada exclusivamente para resolver a rota (`/projetos/[slug]/etapas/[etapaSlug]/missoes/[missaoSlug]`) — a página resolve o slug para o `id` real logo no início, e o resto do código continua igual.
+**Consequência:** nenhum link antigo (com UUID) precisa continuar funcionando — não há alunos reais usando o sistema ainda, então não existe compatibilidade retroativa a preservar. Blast radius contido: só a camada de resolução de rota muda, não o modelo de dados nem as relações internas.
 
 ---
 
@@ -261,6 +261,20 @@ Log de decisões de produto e engenharia, no formato Contexto / Decisão / Conse
 **Contexto:** nunca existiu além de um mockup no `06 - Telas.md` — e com usuários reais entrando na plataforma agora (segundo professor, alunos), esquecimento de senha vira um problema operacional real, não hipotético. Sem isso, Caio é o único caminho de recuperação, via reset manual no Supabase.
 **Decisão:** usar o fluxo nativo do Supabase Auth (`resetPasswordForEmail` + `updateUser`), aproveitando o SMTP (Resend) já configurado — sem inventar mecanismo próprio.
 **Consequência:** dois novos endpoints públicos (`/recuperar-senha`, `/redefinir-senha`), sem mudança de schema.
+
+---
+
+### 2026-07 — Confirmação antes de sair de um projeto
+**Contexto:** validação real — aluno clicou em "Sair do projeto" e saiu imediatamente, sem chance de desfazer ou confirmar.
+**Decisão:** adicionar confirmação explícita antes de executar a ação (dialog ou tela intermediária), avisando que o histórico permanece mas o acesso a novas missões é perdido.
+**Consequência:** puramente de interface, nenhuma mudança de modelo — a ação em si (`status = 'saiu'`) já existia e já estava correta.
+
+---
+
+### 2026-07 — Professor pode reconvidar aluno que saiu, foi removido ou recusou
+**Contexto:** `ProjetoAluno` tem uma linha única por (projeto, aluno) — status 'saiu'/'removido'/'recusado' pareciam terminais, mas na prática um professor precisa poder tentar de novo.
+**Decisão:** atribuir um aluno que já tem uma linha em `ProjetoAluno` com status 'saiu', 'removido' ou 'recusado' faz um UPDATE dessa mesma linha (status volta para 'convidado', `atribuido_por`/`atribuido_em` atualizados, `respondido_em` limpo) em vez de tentar um INSERT novo, que bateria na chave primária. `termo_aceito_em` não é resetado — se o aluno já aceitou o termo do projeto antes, continua aceito.
+**Consequência:** nenhuma mudança de schema, só de lógica na Server Action de atribuir aluno (upsert em vez de insert simples).
 
 ---
 
@@ -292,35 +306,42 @@ Log de decisões de produto e engenharia, no formato Contexto / Decisão / Conse
 
 ---
 
-### 2026-07 — Confirmação antes de sair de um projeto
-**Contexto:** validação real com o caio_aluno — "Sair do projeto" executava direto, sem nenhuma confirmação, apesar de ser uma ação que o aluno não desfaz sozinho (precisa ser reconvidado pelo professor).
-**Decisão:** dialog nativo do navegador (`window.confirm`) antes de submeter, explicando a consequência ("perde acesso a novas missões", "histórico continua visível pro professor"). Não precisa de modal customizado.
-**Consequência:** pequeno Client Component (`sair-do-projeto-form.tsx`) só pra hospedar o `onSubmit` — a Server Action em si não muda.
+### 2026-07 — Tela de atribuir aluno lista, além de buscar — REVERTIDA
+**Contexto:** ideia inicial: com busca vazia, listar todos os usuários com papel = 'aluno'. Caio corretamente apontou o problema antes da implementação: numa plataforma com múltiplos professores não relacionados entre si (mesmo sem multi-tenant formal, cadastro público de aluno já é aberto a qualquer pessoa), isso vazaria a lista de alunos de um professor para qualquer outro professor do sistema.
+**Decisão:** não implementar. Substituída pela decisão seguinte (link de convite).
+**Consequência:** nenhuma mudança de código chegou a ser feita — pegou o problema a tempo, na fase de decisão.
 
 ---
 
-### 2026-07 — Professor pode reconvidar aluno que saiu, foi removido ou recusou
-**Contexto:** validação real com o caio_professor — atribuir de novo um aluno com uma linha existente em `projeto_alunos` (status `saiu`, `removido` ou `recusado`) colidia com a chave primária `(projeto_id, aluno_id)`, e a busca de atribuição já escondia esse aluno da lista de resultados (por já ter uma linha), então nem dava pra tentar de novo pela interface.
-**Decisão:** a Server Action de atribuir aluno passa a fazer UPDATE (reabrindo a mesma linha: status volta pra `convidado`, `atribuido_por`/`atribuido_em` atualizados, `respondido_em` volta pra null) quando já existe uma linha nesses três status, em vez de tentar inserir uma nova. `termo_aceito_em` não é tocado. Status `convidado`/`aceito` continuam com o erro de duplicidade de sempre — não faz sentido atribuir de novo. Um botão "Reconvidar" foi adicionado na lista de alunos do projeto para esses três status.
-**Consequência:** nenhuma mudança de schema — só lógica de aplicação (mesmo padrão de "duas camadas" já usado em outras validações do app).
+### 2026-07 — Link de convite por Projeto — adiado (não rejeitado)
+**Contexto:** boa solução para o problema de descoberta, mas chegou tarde — muitos alunos já se cadastraram sem passar por nenhum link, então não resolve o problema imediato. Fica como ideia válida para turmas futuras (link único por WhatsApp, todo mundo se cadastra e já entra vinculado), não descartada.
+**Decisão:** não implementar agora. Revisitar quando fizer sentido pra uma nova leva de alunos, ainda não cadastrados desde o início.
+**Consequência:** o problema imediato (convidar quem já existe e quem ainda não existe, hoje) é resolvido pela decisão seguinte.
 
 ---
 
-### 2026-07 — "Card desmarcando ao voltar": investigado e descartado como falso positivo de dev
-**Contexto:** suspeita de que marcar uma missão como concluída e apertar voltar do navegador fazia o card voltar a aparecer "disponível", mesmo com o banco correto. Investigação a fundo (reproduzida de forma 100% consistente contra `next dev`) achou a causa raiz: em desenvolvimento, o Next.js manda `Cache-Control: no-cache, must-revalidate` nas páginas dinâmicas — sem o `no-store` que a documentação de self-hosting descreve como o header real de produção (`private, no-cache, no-store, max-age=0, must-revalidate`). Sem `no-store`, o navegador serve a resposta HTTP anterior do próprio cache ao apertar voltar — nada a ver com o Client Cache do React Router (confirmado via probe de evento bruto: nesse caso "voltar" já é um reload de página completo, contexto de JS destruído e recriado do zero).
-**Decisão:** rodei o mesmo teste contra um build de produção local (`next build && next start`) e confirmei via curl que vessia.com.br já manda o `no-store` correto — o teste passa limpo em produção, sem nenhuma mudança de código. Não há bug de aplicação pra corrigir; o teste (`voltar-apos-concluir-missao.spec.ts`) fica no repositório como documentação, marcado `test.skip` no modo dev padrão (falso positivo conhecido).
-**Consequência:** nenhuma mudança de código. Se o mesmo sintoma for relatado de novo em produção (não em teste local), é um problema diferente e precisa de nova investigação — este documento não cobre esse cenário.
+### 2026-07 — Convite por e-mail, para aluno já cadastrado ou não
+**Contexto:** problema real e imediato — muitos alunos já se cadastraram (sem vínculo a projeto ainda), e o professor precisa convidar tanto esses quanto alunos que ainda vão se cadastrar, sem depender de busca fuzzy por nome nem de listar todo mundo (rejeitado por vazar privacidade entre professores não relacionados).
+**Decisão:** na tela de alunos do projeto, professor digita um e-mail específico (não busca, não lista). Se existir uma conta de aluno com esse e-mail, cria (ou reconvida, reaproveitando a lógica já existente) a linha em `ProjetoAluno` na hora. Se não existir, registra um convite pendente por e-mail (nova tabela `convites_email_pendentes`: projeto_id, email, convidado_por, criado_em, resolvido_em). No momento em que qualquer conta nova de aluno é criada, o sistema checa se o e-mail bate com algum convite pendente não resolvido — se bater, cria a linha em `ProjetoAluno` automaticamente e marca o convite como resolvido.
+**Consequência:** nenhum professor busca ou lista aluno de ninguém — cada convite é uma ação direcionada a um e-mail específico que o próprio professor já tem em mãos (lista de matrícula, por exemplo). Cobre os dois casos (já cadastrado / ainda não) com uma única interação.
 
 ---
 
-### 2026-07 — Link de convite por Projeto — adiado
-**Contexto:** a ideia original era gerar um link único por Projeto que qualquer pessoa pudesse abrir para se autoinscrever, mas isso conflita com a decisão já registrada ("Aluno precisa ser atribuído a um projeto pelo professor, não escolhe livremente") — um link aberto reintroduz autoinscrição livre por outra porta, exigindo um passo extra de aprovação manual do professor pra não regredir essa regra.
-**Decisão:** não construir link de convite agora. Em vez disso, o professor convida diretamente por e-mail: se já existe conta de aluno com aquele e-mail, o vínculo é criado na hora (mesmo fluxo de atribuição já existente); se não existe, fica uma pendência (`convites_email_pendentes`) resolvida automaticamente quando essa pessoa se cadastrar.
-**Consequência:** nenhuma tabela ou rota de link público é criada. Revisitar só se o volume de convites tornar o convite um a um por e-mail um gargalo real (ex: turmas de dezenas de alunos de uma vez).
+### 2026-07 — Missão 1 do Bíblia 3D redesenhada: introdução + contribuição, sem consolidação por missão
+**Contexto:** a missão original pedia pra estudar um "roteiro oficial de entrevista" que não estava acessível dentro do produto pros alunos (só existia como documento de repositório). O redesenho final, feito por Caio diretamente na UI: Missão 1 vira uma introdução ao contexto do projeto ("Conhecer o projeto Bíblia 3D" — o que é, pra quem é, o que não é); Missão 2 vira "Propor perguntas para a entrevista" (cada aluno contribui com 3 perguntas, vagas sem limite).
+**Decisão:** a curadoria das perguntas (consolidar as contribuições da Missão 2 num roteiro final de 15-20 perguntas) não vira uma missão própria — Caio faz isso pessoalmente, fora do fluxo de missões. "Entrevistar responsável" (antiga Missão 3) passa a depender diretamente da Missão 2, sem etapa intermediária de "montar roteiro".
+**Consequência:** uma missão a menos na sequência. A necessidade de uma tela mostrando "todas as entregas de uma missão" (mencionada na versão anterior desta decisão) continua válida — Caio precisa ver as entregas de todos os alunos na Missão 2 pra fazer a curadoria, mesmo sem isso ser uma missão formal.
 
 ---
 
-### 2026-07 — Convite por e-mail para aluno não cadastrado ainda
-**Contexto:** o professor muitas vezes quer convidar alguém que ainda não tem conta na Vessia — a busca existente (`buscarUsuariosPorNome`) só encontra quem já tem `profile`, então não havia como registrar essa intenção antes.
-**Decisão:** nova tabela `convites_email_pendentes` (projeto_id, email, convidado_por, criado_em, resolvido_em nullable). O campo "convidar por e-mail" na tela de alunos do projeto resolve na hora se já existe conta de aluno com aquele e-mail (reaproveitando a lógica de upsert de `atribuirAluno` — cria ou reconvida); caso contrário, grava a pendência. No cadastro público (`app/cadastro/actions.ts`), depois de criar a conta com sucesso, todo convite pendente (`resolvido_em is null`) com aquele e-mail — em qualquer projeto — vira uma linha em `projeto_alunos` (status `convidado`) e é marcado como resolvido.
-**Consequência:** o fluxo de resposta do aluno (aceitar/recusar convite) continua exatamente o mesmo já existente — só muda como a linha em `projeto_alunos` chega a existir. RLS de `convites_email_pendentes` só cobre leitura/inserção por professor vinculado ao projeto; a resolução no cadastro usa o client admin (mesmo padrão já usado pra criar o `profile` no cadastro), já que quem está se cadastrando não é professor de projeto nenhum.
+### 2026-07 — Cards inteiros clicáveis (Projeto, Etapa, Missão)
+**Contexto:** achado real de uso — só o título dentro do card era um link; alunos tentavam clicar em qualquer parte do card e nada acontecia.
+**Decisão:** o card inteiro vira clicável (padrão "stretched link" — link cobrindo toda a área do card via posicionamento), mantendo ações internas específicas (Editar, Encerrar, etc.) como elementos separados que não disparam a navegação do card ao serem clicados.
+**Consequência:** puramente de interface, sem mudança de dado ou rota.
+
+---
+
+### 2026-07 — Aceite do termo específico vira gate de projeto, não embutido numa missão
+**Contexto:** problema real e sério — o aceite do termo estava embutido no fluxo de participar da primeira missão, e pelo menos um aluno confundiu o botão de aceite com o de enviar entrega, resultando em envio indevido. Ver `05 - Fluxos.md`, caso de uso atualizado.
+**Decisão:** o aceite do termo específico do projeto passa a ser um gate completo e isolado — uma tela própria, sem nenhum outro elemento de interface, mostrada assim que o aluno acessa o projeto pela primeira vez (antes de ver qualquer Etapa ou Missão), não mais atrelado à tentativa de participar de uma missão específica.
+**Consequência:** nenhuma mudança de modelo (`termo_aceito_em` continua sendo o mesmo campo) — muda só onde e quando a tela aparece. Entregas indevidas já enviadas por confusão (se houver) precisam ser identificadas e tratadas manualmente por enquanto — não existe mecanismo de "desfazer entrega" no sistema.

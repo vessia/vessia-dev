@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { Page } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "./supabase-admin";
 import { gerarSlugBase } from "../lib/slugs/gerar";
 
@@ -49,6 +50,31 @@ export function lerUsuariosDeTeste(): {
   aluno: UsuarioTeste;
 } {
   return JSON.parse(fs.readFileSync(STATE_PATH, "utf-8"));
+}
+
+// Cliente autenticado com a anon key (respeita RLS de verdade, diferente de
+// supabaseAdmin que usa service role e ignora RLS) — pra testar policies
+// diretamente via API, sem precisar de um browser.
+export async function criarClienteAutenticado(usuario: {
+  email: string;
+  password: string;
+}) {
+  const cliente = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  );
+
+  const { error } = await cliente.auth.signInWithPassword({
+    email: usuario.email,
+    password: usuario.password,
+  });
+
+  if (error) {
+    throw new Error(`Falha ao autenticar cliente de teste: ${error.message}`);
+  }
+
+  return cliente;
 }
 
 export async function loginViaUI(

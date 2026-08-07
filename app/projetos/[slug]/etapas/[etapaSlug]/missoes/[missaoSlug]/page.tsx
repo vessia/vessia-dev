@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireOnboardingCompleto } from "@/lib/onboarding/dal";
-import { Banner, MissaoStatusBadge } from "@/app/_components/ui";
+import { Banner, Card, MissaoStatusBadge } from "@/app/_components/ui";
 import { SubmitButton } from "@/app/_components/submit-button";
 import { Tooltip } from "@/app/_components/tooltip";
 import { CONCEITOS } from "@/lib/conceitos/textos";
@@ -12,6 +12,8 @@ import { calcularStatusMissao } from "@/lib/missoes/status";
 import { buscarParticipacoesComResultado } from "@/lib/participacoes/buscar";
 import { resumirParticipacoes } from "@/lib/participacoes/resumo";
 import { requireTermoAceito } from "@/lib/projetos/dal";
+import { buscarEntregasDaMissao } from "@/lib/entregas/buscar";
+import { ConteudoEntrega } from "@/app/_components/conteudo-entrega";
 import { participar, enviarEntrega, marcarConcluida } from "./actions";
 import { EntregaForm } from "./entrega-form";
 
@@ -158,6 +160,12 @@ export default async function MissaoDetalhePage({
       concluidaPorNome = quemConcluiu?.nome ?? null;
     }
   }
+
+  // "Entregas desta missão": visível pra quem quer que tenha chegado até
+  // aqui (a RLS de participacoes/entregas já garante vínculo com o
+  // projeto — professor do projeto ou aluno aceito nele, incluindo o
+  // próprio autor vendo a própria entrega).
+  const entregasDaMissao = await buscarEntregasDaMissao(supabase, missao.id);
 
   const tipo = tipoMissaoInfo(missao.tipo);
 
@@ -376,6 +384,52 @@ export default async function MissaoDetalhePage({
           </div>
         )}
       </div>
+
+      {/* Entregas de todos os alunos vinculados ao projeto — resolve tanto
+          "professor precisa ver as contribuições de todo mundo depois de
+          aprovar" quanto "aluno quer rever o que ele mesmo enviou"
+          (DECISIONS.md, "Missão 1 do Bíblia 3D redesenhada"). */}
+      <Card>
+        <p className="mb-3 text-sm font-medium text-zinc-900 dark:text-zinc-50">
+          Entregas desta missão
+        </p>
+        {entregasDaMissao.length === 0 ? (
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            Nenhuma entrega enviada ainda.
+          </p>
+        ) : (
+          <ul className="flex flex-col gap-4">
+            {entregasDaMissao.map((p) => (
+              <li
+                key={p.participacaoId}
+                className="rounded-lg border border-zinc-100 p-4 dark:border-zinc-800"
+              >
+                <p className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  {p.alunoNome}
+                  {ehAluno && p.alunoId === user.id ? " (você)" : ""}
+                </p>
+                <ul className="flex flex-col gap-3">
+                  {p.entregas.map((e) => (
+                    <li key={e.id}>
+                      <p className="text-xs text-zinc-400 dark:text-zinc-500">
+                        {e.numeroTentativa}ª tentativa —{" "}
+                        {new Date(e.enviadaEm).toLocaleDateString("pt-BR")}
+                      </p>
+                      <div className="mt-1">
+                        <ConteudoEntrega
+                          tipoConteudo={e.tipoConteudo}
+                          conteudo={e.conteudo}
+                          urlAssinada={e.urlAssinada}
+                        />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
     </main>
   );
 }

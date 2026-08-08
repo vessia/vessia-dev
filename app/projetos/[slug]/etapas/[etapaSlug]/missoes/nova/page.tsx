@@ -160,6 +160,26 @@ export default async function NovaMissaoPage({
             </label>
           </div>
 
+          <div className="flex flex-col gap-1">
+            <label
+              htmlFor="entregas_visiveis_para_colegas"
+              className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+            >
+              <input
+                type="checkbox"
+                id="entregas_visiveis_para_colegas"
+                name="entregas_visiveis_para_colegas"
+                className="h-4 w-4 rounded border-zinc-300"
+              />
+              Alunos veem as entregas uns dos outros nesta missão
+            </label>
+            <p className="text-xs text-zinc-400 dark:text-zinc-500">
+              Desligado, cada aluno só vê a própria entrega. Ligue pra missões
+              de contribuição coletiva, onde ver o que os colegas já mandaram
+              é o ponto.
+            </p>
+          </div>
+
           <fieldset className="flex flex-col gap-2">
             <legend className="mb-1 text-sm font-medium text-zinc-700 dark:text-zinc-300">
               Depende de (opcional)

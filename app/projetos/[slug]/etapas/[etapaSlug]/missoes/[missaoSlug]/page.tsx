@@ -66,7 +66,7 @@ export default async function MissaoDetalhePage({
   const { data: missao } = await supabase
     .from("missoes")
     .select(
-      "id, titulo, descricao, tipo, objetivo, entrega_esperada, criterio_avaliacao, prazo, vagas, obrigatoria, limite_reenvios, concluida_em, concluida_por, etapa_id",
+      "id, titulo, descricao, tipo, objetivo, entrega_esperada, criterio_avaliacao, prazo, vagas, obrigatoria, limite_reenvios, entregas_visiveis_para_colegas, concluida_em, concluida_por, etapa_id",
     )
     .eq("etapa_id", etapaId)
     .eq("slug", missaoSlug)
@@ -161,11 +161,14 @@ export default async function MissaoDetalhePage({
     }
   }
 
-  // "Entregas desta missão": visível pra quem quer que tenha chegado até
-  // aqui (a RLS de participacoes/entregas já garante vínculo com o
-  // projeto — professor do projeto ou aluno aceito nele, incluindo o
-  // próprio autor vendo a própria entrega).
+  // "Entregas desta missão": professor sempre vê a de todos os alunos
+  // vinculados. Aluno só vê a própria, a não ser que o professor tenha
+  // ligado "colegas veem as entregas uns dos outros" nesta missão
+  // (docs/019_missoes_entregas_visiveis_para_colegas.sql) — a RLS de
+  // entregas já aplica essa regra, esta flag só decide o texto da tela.
   const entregasDaMissao = await buscarEntregasDaMissao(supabase, missao.id);
+  const entregasMostramTodoMundo =
+    ehProfessor || missao.entregas_visiveis_para_colegas;
 
   const tipo = tipoMissaoInfo(missao.tipo);
 
@@ -385,17 +388,24 @@ export default async function MissaoDetalhePage({
         )}
       </div>
 
-      {/* Entregas de todos os alunos vinculados ao projeto — resolve tanto
-          "professor precisa ver as contribuições de todo mundo depois de
-          aprovar" quanto "aluno quer rever o que ele mesmo enviou"
-          (DECISIONS.md, "Missão 1 do Bíblia 3D redesenhada"). */}
+      {/* Professor sempre vê a contribuição de todo mundo. Aluno só vê a
+          própria, a não ser que o professor tenha ligado "colegas veem as
+          entregas uns dos outros" nesta missão — útil pra missões de
+          contribuição coletiva (DECISIONS.md, "Missão 1 do Bíblia 3D
+          redesenhada"; escopo por dono em
+          docs/018_rls_entregas_avaliacoes_apenas_dono_ou_professor.sql; toggle
+          em docs/019_missoes_entregas_visiveis_para_colegas.sql). */}
       <Card>
         <p className="mb-3 text-sm font-medium text-zinc-900 dark:text-zinc-50">
-          Entregas desta missão
+          {entregasMostramTodoMundo
+            ? "Entregas desta missão"
+            : "Sua entrega nesta missão"}
         </p>
         {entregasDaMissao.length === 0 ? (
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Nenhuma entrega enviada ainda.
+            {entregasMostramTodoMundo
+              ? "Nenhuma entrega enviada ainda."
+              : "Você ainda não enviou nenhuma entrega."}
           </p>
         ) : (
           <ul className="flex flex-col gap-4">

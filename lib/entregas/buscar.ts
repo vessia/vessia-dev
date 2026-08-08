@@ -18,12 +18,15 @@ export type ParticipacaoComEntregas = {
   entregas: EntregaDaMissao[];
 };
 
-// "Entregas desta missão": lista todas as participações de uma missão com
-// suas entregas (mais recente primeiro), pra quem está vinculado ao projeto
-// (professor OU qualquer aluno aceito, incluindo o próprio autor vendo a
-// própria entrega) — RLS de participacoes/entregas já escopa isso por
-// vínculo de projeto (docs/017_rls_entregas_participacoes_avaliacoes_escopo_projeto.sql),
-// essa função só monta a leitura agrupada por aluno.
+// "Entregas desta missão": lista as participações de uma missão com suas
+// entregas (mais recente primeiro). A RLS de entregas escopa quem lê o quê
+// (docs/018_rls_entregas_avaliacoes_apenas_dono_ou_professor.sql,
+// docs/019_missoes_entregas_visiveis_para_colegas.sql): professor do
+// projeto vê a de todo mundo; aluno só a própria, a não ser que a missão
+// tenha o toggle "colegas veem as entregas uns dos outros" ligado —
+// participações sem entrega visível pra este usuário chegam aqui com
+// `entregas: []` e são descartadas pelo filtro no fim. Esta função só monta
+// a leitura agrupada por aluno a partir do que a RLS já retornou.
 export async function buscarEntregasDaMissao(
   supabase: SupabaseClient,
   missaoId: string,

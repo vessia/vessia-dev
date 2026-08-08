@@ -30,6 +30,8 @@ function lerCamposMissao(formData: FormData) {
   const vagas = vagasRaw ? Number(vagasRaw) : null;
   const obrigatoria = formData.get("obrigatoria") === "on";
   const limiteReenvios = Number(formData.get("limite_reenvios") ?? "1");
+  const entregasVisiveisParaColegas =
+    formData.get("entregas_visiveis_para_colegas") === "on";
   const dependencias = formData.getAll("dependencias").map(String);
 
   return {
@@ -43,6 +45,7 @@ function lerCamposMissao(formData: FormData) {
     vagas,
     obrigatoria,
     limiteReenvios,
+    entregasVisiveisParaColegas,
     dependencias,
   };
 }
@@ -146,6 +149,7 @@ export async function criarMissao(formData: FormData) {
       vagas: campos.vagas,
       obrigatoria: campos.obrigatoria,
       limite_reenvios: campos.limiteReenvios,
+      entregas_visiveis_para_colegas: campos.entregasVisiveisParaColegas,
       slug,
     })
     .select("id")
@@ -227,6 +231,7 @@ export async function atualizarMissao(formData: FormData) {
       vagas: campos.vagas,
       obrigatoria: campos.obrigatoria,
       limite_reenvios: campos.limiteReenvios,
+      entregas_visiveis_para_colegas: campos.entregasVisiveisParaColegas,
     })
     .eq("id", missaoId);
 

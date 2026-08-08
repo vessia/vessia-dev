@@ -216,7 +216,11 @@ export async function criarEtapaDeTeste(
 export async function criarMissaoDeTeste(
   etapaId: string,
   titulo: string,
-  opcoes?: { prazo?: string; vagas?: number | null },
+  opcoes?: {
+    prazo?: string;
+    vagas?: number | null;
+    entregasVisiveisParaColegas?: boolean;
+  },
 ) {
   const slug = await gerarSlugUnicoDeTeste(
     "missoes",
@@ -235,6 +239,9 @@ export async function criarMissaoDeTeste(
       prazo: opcoes?.prazo,
       slug,
       ...(opcoes?.vagas !== undefined ? { vagas: opcoes.vagas } : {}),
+      ...(opcoes?.entregasVisiveisParaColegas !== undefined
+        ? { entregas_visiveis_para_colegas: opcoes.entregasVisiveisParaColegas }
+        : {}),
     })
     .select("id, slug")
     .single();

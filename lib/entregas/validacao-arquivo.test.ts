@@ -60,4 +60,26 @@ describe("validarArquivoEntrega", () => {
       );
     }
   });
+
+  it("aceita docx e doc dentro do limite de 10MB", () => {
+    for (const tipo of [
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ]) {
+      expect(
+        validarArquivoEntrega({ tipo, tamanhoBytes: 9 * 1024 * 1024 }).permitido,
+      ).toBe(true);
+    }
+  });
+
+  it("rejeita docx acima de 10MB", () => {
+    const resultado = validarArquivoEntrega({
+      tipo: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      tamanhoBytes: 11 * 1024 * 1024,
+    });
+    expect(resultado).toEqual({
+      permitido: false,
+      motivo: "Documento maior que o limite de 10MB.",
+    });
+  });
 });

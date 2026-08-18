@@ -10,6 +10,7 @@ import {
 } from "@/lib/missoes/dependencias";
 import { gerarSlugUnico } from "@/lib/slugs/unico";
 import { buscarSlugPorId } from "@/lib/slugs/buscar";
+import { inserirAnexoLink } from "@/lib/arquivos/inserir-anexo";
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -81,13 +82,12 @@ async function salvarAnexoLink(
 
   const nome = String(formData.get("anexo_nome") ?? "").trim() || url;
 
-  await supabase.from("arquivos").insert({
-    dono_tipo: "missao",
-    dono_id: missaoId,
-    nome,
+  await inserirAnexoLink(supabase, {
+    donoTipo: "missao",
+    donoId: missaoId,
+    userId,
     url,
-    tipo: "link",
-    enviado_por: userId,
+    nome,
   });
 }
 

@@ -2,20 +2,26 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireOnboardingCompleto } from "@/lib/onboarding/dal";
-import { MissaoStatusBadge } from "@/app/_components/ui";
+import { Banner, MissaoStatusBadge } from "@/app/_components/ui";
 import { tipoMissaoInfo } from "@/lib/missoes/constantes";
 import { buscarMissoesComStatus } from "@/lib/missoes/buscar";
 import { Tooltip } from "@/app/_components/tooltip";
 import { CONCEITOS } from "@/lib/conceitos/textos";
 import { requireTermoAceito } from "@/lib/projetos/dal";
+import { gerarUrlAssinadaArquivo } from "@/lib/entregas/url-assinada";
+import { concluirEtapa } from "../actions";
+import { ConcluirEtapaForm } from "./concluir-etapa-form";
 
 export default async function EtapaDetalhePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string; etapaSlug: string }>;
+  searchParams: Promise<{ error?: string }>;
 }) {
   const user = await requireOnboardingCompleto();
   const { slug: projetoSlug, etapaSlug } = await params;
+  const { error } = await searchParams;
   const supabase = await createClient();
 
   const { data: profile } = await supabase
@@ -38,7 +44,9 @@ export default async function EtapaDetalhePage({
 
   const { data: etapa } = await supabase
     .from("etapas")
-    .select("id, slug, nome, ordem, projeto_id")
+    .select(
+      "id, slug, nome, ordem, projeto_id, concluida_em, concluida_por, resumo_encerramento",
+    )
     .eq("projeto_id", projeto.id)
     .eq("slug", etapaSlug)
     .single();
@@ -57,6 +65,38 @@ export default async function EtapaDetalhePage({
   }
 
   const missoesComStatus = await buscarMissoesComStatus(supabase, etapa.id);
+
+  // Conclusão manual da etapa (DECISIONS.md, "Conclusão manual de Etapa,
+  // com resumo + anexos/links") — visível a qualquer pessoa vinculada ao
+  // projeto (professor ou aluno aceito), não só professor. A RLS de
+  // `arquivos` (docs/020_conclusao_etapa_e_rls_arquivos.sql) já escopa essa
+  // leitura por projeto — não precisa checar de novo aqui.
+  let concluidaPorNome: string | null = null;
+  if (etapa.concluida_por) {
+    const { data: quemConcluiu } = await supabase
+      .from("profiles")
+      .select("nome")
+      .eq("id", etapa.concluida_por)
+      .single();
+    concluidaPorNome = quemConcluiu?.nome ?? null;
+  }
+
+  const { data: anexosEtapa } = await supabase
+    .from("arquivos")
+    .select("id, nome, url, tipo")
+    .eq("dono_tipo", "etapa")
+    .eq("dono_id", etapa.id);
+
+  const anexosComLink = await Promise.all(
+    (anexosEtapa ?? []).map(async (a) => ({
+      id: a.id as string,
+      nome: a.nome as string,
+      href:
+        a.tipo === "arquivo"
+          ? await gerarUrlAssinadaArquivo(a.url as string)
+          : (a.url as string),
+    })),
+  );
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 p-4 sm:p-8">
@@ -89,6 +129,8 @@ export default async function EtapaDetalhePage({
           </Link>
         </div>
       </div>
+
+      {error && <Banner variant="error">{error}</Banner>}
 
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -178,6 +220,68 @@ export default async function EtapaDetalhePage({
           </ul>
         )}
       </div>
+
+      {/* Conclusão manual da etapa (DECISIONS.md, "Conclusão manual de
+          Etapa, com resumo + anexos/links"): resumo e anexos/links ficam
+          visíveis a qualquer pessoa vinculada ao projeto assim que a etapa é
+          concluída — não só professor. Só o professor vê o formulário pra
+          concluir, enquanto ainda não foi concluída. */}
+      {etapa.concluida_em ? (
+        <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+          <p className="w-fit rounded-full bg-blue-100 px-4 py-2 text-sm text-blue-700 dark:bg-blue-950 dark:text-blue-300">
+            ✅ Etapa concluída em{" "}
+            {new Date(etapa.concluida_em).toLocaleDateString("pt-BR")}
+            {concluidaPorNome ? ` por ${concluidaPorNome}` : ""}.
+          </p>
+
+          {etapa.resumo_encerramento && (
+            <p className="text-sm whitespace-pre-wrap text-zinc-700 dark:text-zinc-300">
+              {etapa.resumo_encerramento}
+            </p>
+          )}
+
+          {anexosComLink.length > 0 && (
+            <div>
+              <p className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+                Anexos e links
+              </p>
+              <ul className="flex flex-col gap-1">
+                {anexosComLink.map((a) =>
+                  a.href ? (
+                    <li key={a.id}>
+                      <a
+                        href={a.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 underline dark:text-blue-400"
+                      >
+                        {a.nome}
+                      </a>
+                    </li>
+                  ) : (
+                    <li
+                      key={a.id}
+                      className="text-sm text-zinc-500 dark:text-zinc-400"
+                    >
+                      {a.nome} (não foi possível carregar o link agora)
+                    </li>
+                  ),
+                )}
+              </ul>
+            </div>
+          )}
+        </div>
+      ) : (
+        ehProfessor && (
+          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
+            <ConcluirEtapaForm
+              action={concluirEtapa}
+              projetoId={projeto.id}
+              etapaId={etapa.id}
+            />
+          </div>
+        )
+      )}
     </main>
   );
 }

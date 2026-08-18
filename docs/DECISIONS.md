@@ -348,14 +348,21 @@ Log de decisões de produto e engenharia, no formato Contexto / Decisão / Conse
 
 ---
 
-### 2026-07 — Retoque visual no Início
-**Contexto:** a tela de Início (dashboard) do professor era só duas listas de texto corrido, sem noção de volume à primeira vista; a do aluno era só "Olá, {nome}", sem informação nenhuma.
-**Decisão:** puramente estético, nenhum dado novo, nenhuma lógica muda. Professor ganha uma linha de 3 cards de resumo no topo (Projetos ativos, Pendências de avaliação, Atrasadas — reaproveitando dados que a página já buscava) e mais respiro visual + um ícone por item nas duas listas abaixo. Aluno ganha um resumo simples (Projetos ativos, Missões disponíveis — somadas entre todos os projetos ativos onde ele está aceito) ou, se ainda não tiver nenhum vínculo de projeto, uma mensagem amigável no lugar da tela vazia. Ambos reaproveitam o componente `Card` já existente, sem paleta/fonte nova.
-**Consequência:** dois novos exports em `lib/dashboard/` (`contarProjetosAtivos`, `buscarResumoAluno`) — o segundo reaproveita `buscarMissoesComStatus` (mesma fonte de status usada no mapa do projeto) em vez de recalcular a regra de disponibilidade. Nenhuma migration, nenhuma rota nova.
+### 2026-07 — Retoque visual no Início (dashboard), sem mudar conteúdo
+**Contexto:** com uso real acontecendo, a tela "Início" (tanto professor quanto aluno) ficou funcional mas visualmente pobre — Caio confirmou que o problema é design, não falta de informação.
+**Decisão:** polimento visual (cards de resumo com números, melhor hierarquia, espaçamento), reaproveitando a paleta e componentes (Card, StatusBadge) já estabelecidos desde o Bloco 3 — sem introduzir sistema visual novo, sem mudar que dado é mostrado.
+**Consequência:** puramente estético, nenhuma mudança de lógica ou schema.
 
 ---
 
-### 2026-08 — "Entregas desta missão": privado por padrão, colaborativo por opção do professor
-**Contexto:** a tela "Entregas desta missão" (ver decisão "Missão 1 do Bíblia 3D redesenhada") foi lançada mostrando a entrega de todo mundo pra qualquer aluno vinculado ao projeto. Caio apontou que isso não deveria ser o padrão — o conteúdo que um aluno envia é dele, não do projeto; cada aluno deveria ver só a própria entrega.
-**Decisão:** o padrão vira "cada aluno só vê a própria entrega" (RLS: `docs/018_rls_entregas_avaliacoes_apenas_dono_ou_professor.sql`). Como o caso de uso original (Missão 2 do Bíblia 3D: colega vê o que os outros já propuseram, pra não repetir pergunta) continua real, vira um toggle por missão — `missoes.entregas_visiveis_para_colegas`, desligado por padrão, ligado pelo professor na tela de editar missão (`docs/019_missoes_entregas_visiveis_para_colegas.sql`). Avaliações (nota/feedback do professor) não têm toggle — continuam sempre privadas entre professor e o aluno dono, mesmo com o toggle de entregas ligado.
-**Consequência:** a tela muda de rótulo conforme o caso — "Entregas desta missão" (professor sempre; aluno quando o toggle está ligado) vs. "Sua entrega nesta missão" (aluno, toggle desligado). `participacoes` não mudou — continua legível por qualquer vinculado ao projeto, pois só expõe `aluno_id`/`status` (não conteúdo) e é usado pra contar vagas/status de missões de colegas nas telas de etapa/mapa.
+### 2026-07 — Conclusão manual de Etapa, com resumo + anexos/links
+**Contexto:** hoje a conclusão de uma etapa é só um número calculado (100% quando todas as missões obrigatórias estão aprovadas) — não existe nenhum registro formal de que a etapa foi encerrada. Precisão real: ao terminar a Descoberta do Bíblia 3D, Caio queria um jeito de "fechar" a etapa oficialmente, com um resumo e espaço pra anexar documento (docx, PDF) ou link — acessível a todos os alunos do projeto, não só ao professor.
+**Decisão:** `Etapa` ganha `concluida_em`, `concluida_por` e `resumo_encerramento` (texto opcional). Anexos/links usam a entidade `Arquivo` já existente (a mesma usada em anexos de Missão e conteúdo de Entrega) — `tipo_dono_arquivo` ganha o valor `'etapa'`. Nenhuma entidade nova.
+**Consequência:** upload de arquivo reaproveita o bucket e o fluxo de assinatura de URL já construídos para entregas (Bloco de upload de imagem/PDF) — ampliando a whitelist de tipo para incluir docx, já que Caio mencionou isso especificamente. Leitura acessível a qualquer aluno vinculado ao projeto (não só professor) — o que expôs a necessidade de corrigir a decisão seguinte.
+
+---
+
+### 2026-07 — RLS de Arquivo passa a ser escopada por projeto (fecha dívida técnica antiga)
+**Contexto:** desde o Bloco 6, a RLS de `arquivos` era "qualquer professor autenticado escreve, leitura geral" — registrada como dívida técnica aceitável enquanto os anexos eram só material de apoio de missão, baixo risco. Com anexos de conclusão de etapa podendo conter documentos reais do projeto (PRD, resumos), essa abertura deixou de ser aceitável — mesma classe de vazamento entre professores/alunos não relacionados já corrigida para entregas/participações/avaliações.
+**Decisão:** nova função auxiliar (`projeto_id_do_arquivo`) resolve o projeto correspondente a partir do `dono_tipo`/`dono_id` do arquivo (via join condicional pra missão, etapa, entrega ou avaliação), e a RLS de `arquivos` passa a usar essa função com `eh_professor_do_projeto` / `eh_aluno_aceito_no_projeto`, mesmo padrão já usado em todo o resto do sistema desde o Bloco 12.
+**Consequência:** fecha a última dívida técnica de escopo de RLS pendente da lista. Remove a entrada correspondente do TECH-DEBT.md.

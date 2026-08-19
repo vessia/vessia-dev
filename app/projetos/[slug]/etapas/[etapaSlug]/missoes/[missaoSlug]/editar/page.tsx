@@ -122,7 +122,7 @@ export default async function EditarMissaoPage({
             />
           </Field>
 
-          <Field label="Descrição">
+          <Field label="Descrição (aceita Markdown)">
             <textarea
               name="descricao"
               rows={2}
@@ -146,7 +146,7 @@ export default async function EditarMissaoPage({
             </select>
           </Field>
 
-          <Field label="Objetivo">
+          <Field label="Objetivo (aceita Markdown)">
             <textarea
               name="objetivo"
               required
@@ -156,7 +156,7 @@ export default async function EditarMissaoPage({
             />
           </Field>
 
-          <Field label="Entrega esperada">
+          <Field label="Entrega esperada (aceita Markdown)">
             <textarea
               name="entrega_esperada"
               required
@@ -166,7 +166,7 @@ export default async function EditarMissaoPage({
             />
           </Field>
 
-          <Field label="Critério de avaliação">
+          <Field label="Critério de avaliação (aceita Markdown)">
             <textarea
               name="criterio_avaliacao"
               required

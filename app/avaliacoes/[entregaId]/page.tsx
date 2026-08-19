@@ -8,6 +8,7 @@ import { SubmitButton } from "@/app/_components/submit-button";
 import { buscarEntregaComContexto, usuarioPodeAcessarEntrega } from "@/lib/entregas/dal";
 import { gerarUrlAssinadaArquivo } from "@/lib/entregas/url-assinada";
 import { ConteudoEntrega } from "@/app/_components/conteudo-entrega";
+import { Markdown } from "@/app/_components/markdown";
 import { avaliar } from "./actions";
 
 const RESULTADO_LABEL: Record<string, string> = {
@@ -129,9 +130,7 @@ export default async function AvaliacaoPage({
           <p className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
             Critério de avaliação
           </p>
-          <p className="text-sm text-zinc-700 dark:text-zinc-300">
-            {missao.criterio_avaliacao}
-          </p>
+          <Markdown>{missao.criterio_avaliacao}</Markdown>
         </Card>
         <Card>
           <p className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">

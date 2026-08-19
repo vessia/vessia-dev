@@ -81,7 +81,7 @@ export default async function NovaMissaoPage({
             <input type="text" name="titulo" required className={inputClass} />
           </Field>
 
-          <Field label="Descrição">
+          <Field label="Descrição (aceita Markdown)">
             <textarea name="descricao" rows={2} className={inputClass} />
           </Field>
 
@@ -98,11 +98,11 @@ export default async function NovaMissaoPage({
             </select>
           </Field>
 
-          <Field label="Objetivo">
+          <Field label="Objetivo (aceita Markdown)">
             <textarea name="objetivo" required rows={2} className={inputClass} />
           </Field>
 
-          <Field label="Entrega esperada">
+          <Field label="Entrega esperada (aceita Markdown)">
             <textarea
               name="entrega_esperada"
               required
@@ -111,7 +111,7 @@ export default async function NovaMissaoPage({
             />
           </Field>
 
-          <Field label="Critério de avaliação">
+          <Field label="Critério de avaliação (aceita Markdown)">
             <textarea
               name="criterio_avaliacao"
               required

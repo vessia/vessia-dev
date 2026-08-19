@@ -10,6 +10,7 @@ import { Tooltip } from "@/app/_components/tooltip";
 import { CONCEITOS } from "@/lib/conceitos/textos";
 import { requireTermoAceito } from "@/lib/projetos/dal";
 import { gerarUrlAssinadaArquivo } from "@/lib/entregas/url-assinada";
+import { Markdown } from "@/app/_components/markdown";
 import { concluirEtapa, editarResumoConclusaoEtapa } from "../actions";
 import { ConcluirEtapaForm } from "./concluir-etapa-form";
 
@@ -243,7 +244,7 @@ export default async function EtapaDetalhePage({
               <input type="hidden" name="projeto_id" value={projeto.id} />
               <input type="hidden" name="etapa_id" value={etapa.id} />
               <label className="flex flex-col gap-1.5 text-sm text-zinc-700 dark:text-zinc-300">
-                Resumo de encerramento
+                Resumo de encerramento (aceita Markdown)
                 <textarea
                   name="resumo_encerramento"
                   rows={4}
@@ -258,9 +259,7 @@ export default async function EtapaDetalhePage({
             </form>
           ) : (
             etapa.resumo_encerramento && (
-              <p className="text-sm whitespace-pre-wrap text-zinc-700 dark:text-zinc-300">
-                {etapa.resumo_encerramento}
-              </p>
+              <Markdown>{etapa.resumo_encerramento}</Markdown>
             )
           )}
 

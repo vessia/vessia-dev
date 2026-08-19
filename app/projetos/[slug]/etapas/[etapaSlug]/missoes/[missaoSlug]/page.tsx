@@ -14,6 +14,7 @@ import { resumirParticipacoes } from "@/lib/participacoes/resumo";
 import { requireTermoAceito } from "@/lib/projetos/dal";
 import { buscarEntregasDaMissao } from "@/lib/entregas/buscar";
 import { ConteudoEntrega } from "@/app/_components/conteudo-entrega";
+import { Markdown } from "@/app/_components/markdown";
 import { participar, enviarEntrega, marcarConcluida } from "./actions";
 import { EntregaForm } from "./entrega-form";
 
@@ -195,36 +196,26 @@ export default async function MissaoDetalhePage({
       {error && <Banner variant="error">{error}</Banner>}
 
       <div className="flex flex-col gap-4 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-950">
-        {missao.descricao && (
-          <p className="text-sm text-zinc-600 dark:text-zinc-300">
-            {missao.descricao}
-          </p>
-        )}
+        {missao.descricao && <Markdown>{missao.descricao}</Markdown>}
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
               Objetivo
             </p>
-            <p className="text-sm text-zinc-700 dark:text-zinc-300">
-              {missao.objetivo}
-            </p>
+            <Markdown>{missao.objetivo}</Markdown>
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
               Entrega esperada
             </p>
-            <p className="text-sm text-zinc-700 dark:text-zinc-300">
-              {missao.entrega_esperada}
-            </p>
+            <Markdown>{missao.entrega_esperada}</Markdown>
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
               Critério de avaliação
             </p>
-            <p className="text-sm text-zinc-700 dark:text-zinc-300">
-              {missao.criterio_avaliacao}
-            </p>
+            <Markdown>{missao.criterio_avaliacao}</Markdown>
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">

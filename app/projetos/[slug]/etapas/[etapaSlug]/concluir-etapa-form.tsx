@@ -26,7 +26,7 @@ export function ConcluirEtapaForm({
       <input type="hidden" name="etapa_id" value={etapaId} />
 
       <label className="flex flex-col gap-1.5 text-sm text-zinc-700 dark:text-zinc-300">
-        Resumo de encerramento (opcional)
+        Resumo de encerramento (opcional, aceita Markdown)
         <textarea
           name="resumo_encerramento"
           rows={4}

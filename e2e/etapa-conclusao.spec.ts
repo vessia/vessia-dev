@@ -288,3 +288,72 @@ test("professor conclui a etapa com resumo, upload de docx e link — aluno vinc
     await supabaseAdmin.from("projetos").delete().eq("id", projeto.id);
   }
 });
+
+test("professor edita o resumo de encerramento depois da etapa já concluída", async ({
+  page,
+}) => {
+  test.setTimeout(60_000);
+  const { professor, aluno } = lerUsuariosDeTeste();
+  const projeto = await criarProjetoDeTeste(
+    professor.id,
+    `Projeto Editar Resumo Etapa E2E ${Date.now()}`,
+    { alunoAceitoId: aluno.id },
+  );
+  const etapa = await criarEtapaDeTeste(projeto.id, "Descoberta", 1);
+
+  const { error: concluirError } = await supabaseAdmin
+    .from("etapas")
+    .update({
+      concluida_em: new Date().toISOString(),
+      concluida_por: professor.id,
+      resumo_encerramento: "Resumo original da conclusão.",
+    })
+    .eq("id", etapa.id);
+  if (concluirError) {
+    throw new Error(`Falha ao semear etapa concluída: ${concluirError.message}`);
+  }
+
+  const urlEtapa = `/projetos/${projeto.slug}/etapas/${etapa.slug}`;
+
+  try {
+    await loginViaUI(page, professor);
+    await page.goto(urlEtapa);
+
+    await expect(page.getByLabel("Resumo de encerramento")).toHaveValue(
+      "Resumo original da conclusão.",
+    );
+
+    await page
+      .getByLabel("Resumo de encerramento")
+      .fill("Resumo revisado depois da conclusão.");
+    await page.getByRole("button", { name: "Salvar resumo" }).click();
+
+    await expect(
+      page.getByText("Resumo revisado depois da conclusão."),
+    ).toBeVisible();
+
+    const { data: etapaAtualizada } = await supabaseAdmin
+      .from("etapas")
+      .select("concluida_em, concluida_por, resumo_encerramento")
+      .eq("id", etapa.id)
+      .single();
+    expect(etapaAtualizada?.resumo_encerramento).toBe(
+      "Resumo revisado depois da conclusão.",
+    );
+    // Editar o resumo não deve mexer em quem/quando concluiu.
+    expect(etapaAtualizada?.concluida_por).toBe(professor.id);
+    expect(etapaAtualizada?.concluida_em).toBeTruthy();
+
+    // Aluno vinculado vê o texto atualizado, mas não tem como editá-lo.
+    await loginViaUI(page, aluno);
+    await page.goto(urlEtapa);
+    await expect(
+      page.getByText("Resumo revisado depois da conclusão."),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Salvar resumo" }),
+    ).not.toBeVisible();
+  } finally {
+    await supabaseAdmin.from("projetos").delete().eq("id", projeto.id);
+  }
+});

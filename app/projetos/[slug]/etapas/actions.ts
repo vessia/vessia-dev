@@ -156,6 +156,34 @@ export async function concluirEtapa(formData: FormData) {
   redirect(destino);
 }
 
+// Pedido do Gestor: depois de concluída, o resumo de encerramento continua
+// editável (releitura/correção posterior) — concluida_em/concluida_por não
+// mudam, e anexos/links não fazem parte deste fluxo (só o texto).
+export async function editarResumoConclusaoEtapa(formData: FormData) {
+  await requireProfessor();
+
+  const projetoId = String(formData.get("projeto_id") ?? "");
+  const etapaId = String(formData.get("etapa_id") ?? "");
+  const resumo =
+    String(formData.get("resumo_encerramento") ?? "").trim() || null;
+
+  const supabase = await createClient();
+  const projetoSlug = await buscarSlugPorId(supabase, "projetos", projetoId);
+  const etapaSlug = await buscarSlugPorId(supabase, "etapas", etapaId);
+  const destino = `/projetos/${projetoSlug}/etapas/${etapaSlug}`;
+
+  const { error } = await supabase
+    .from("etapas")
+    .update({ resumo_encerramento: resumo })
+    .eq("id", etapaId);
+
+  if (error) {
+    redirect(`${destino}?error=${encodeURIComponent(mensagemDeErro(error))}`);
+  }
+
+  redirect(destino);
+}
+
 export async function atualizarEtapa(formData: FormData) {
   await requireProfessor();
 

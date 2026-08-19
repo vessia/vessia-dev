@@ -2,14 +2,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireOnboardingCompleto } from "@/lib/onboarding/dal";
-import { Banner, MissaoStatusBadge } from "@/app/_components/ui";
+import { Banner, MissaoStatusBadge, inputClass } from "@/app/_components/ui";
+import { SubmitButton } from "@/app/_components/submit-button";
 import { tipoMissaoInfo } from "@/lib/missoes/constantes";
 import { buscarMissoesComStatus } from "@/lib/missoes/buscar";
 import { Tooltip } from "@/app/_components/tooltip";
 import { CONCEITOS } from "@/lib/conceitos/textos";
 import { requireTermoAceito } from "@/lib/projetos/dal";
 import { gerarUrlAssinadaArquivo } from "@/lib/entregas/url-assinada";
-import { concluirEtapa } from "../actions";
+import { concluirEtapa, editarResumoConclusaoEtapa } from "../actions";
 import { ConcluirEtapaForm } from "./concluir-etapa-form";
 
 export default async function EtapaDetalhePage({
@@ -234,10 +235,33 @@ export default async function EtapaDetalhePage({
             {concluidaPorNome ? ` por ${concluidaPorNome}` : ""}.
           </p>
 
-          {etapa.resumo_encerramento && (
-            <p className="text-sm whitespace-pre-wrap text-zinc-700 dark:text-zinc-300">
-              {etapa.resumo_encerramento}
-            </p>
+          {ehProfessor ? (
+            <form
+              action={editarResumoConclusaoEtapa}
+              className="flex flex-col gap-2"
+            >
+              <input type="hidden" name="projeto_id" value={projeto.id} />
+              <input type="hidden" name="etapa_id" value={etapa.id} />
+              <label className="flex flex-col gap-1.5 text-sm text-zinc-700 dark:text-zinc-300">
+                Resumo de encerramento
+                <textarea
+                  name="resumo_encerramento"
+                  rows={4}
+                  defaultValue={etapa.resumo_encerramento ?? ""}
+                  placeholder="O que foi feito nesta etapa..."
+                  className={inputClass}
+                />
+              </label>
+              <SubmitButton pendingText="Salvando..." className="w-fit">
+                Salvar resumo
+              </SubmitButton>
+            </form>
+          ) : (
+            etapa.resumo_encerramento && (
+              <p className="text-sm whitespace-pre-wrap text-zinc-700 dark:text-zinc-300">
+                {etapa.resumo_encerramento}
+              </p>
+            )
           )}
 
           {anexosComLink.length > 0 && (

@@ -1,4 +1,5 @@
 import { ehImagem } from "@/lib/entregas/tipo-arquivo";
+import { Markdown } from "@/app/_components/markdown";
 
 // Renderização do conteúdo de uma Entrega (texto, link ou arquivo com URL
 // assinada) — compartilhado entre a tela de avaliação e "Entregas desta
@@ -13,11 +14,11 @@ export function ConteudoEntrega({
   urlAssinada: string | null;
 }) {
   if (tipoConteudo !== "arquivo") {
-    return (
-      <p className="text-sm whitespace-pre-wrap text-zinc-700 dark:text-zinc-300">
-        {conteudo}
-      </p>
-    );
+    // O formulário de entrega usa o mesmo textarea livre pra "texto" e
+    // "link" (nem sempre é só uma URL pura) — Markdown com autolink do
+    // remark-gfm garante que qualquer URL colada vire link clicável, sem
+    // exigir que o aluno cole só a URL e nada mais.
+    return <Markdown>{conteudo}</Markdown>;
   }
 
   if (!urlAssinada) {
